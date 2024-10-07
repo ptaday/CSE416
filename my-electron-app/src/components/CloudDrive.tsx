@@ -44,6 +44,20 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.handleDrop = this.handleDrop.bind(this);
     }
 
+    componentDidMount() {
+        window.addEventListener('dragover', this.handleDragOver);
+        window.addEventListener('dragenter', this.handleDragEnter);
+        window.addEventListener('dragleave', this.handleDragLeave);
+        window.addEventListener('drop', this.handleDrop);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('dragover', this.handleDragOver);
+        window.removeEventListener('dragenter', this.handleDragEnter);
+        window.removeEventListener('dragleave', this.handleDragLeave);
+        window.removeEventListener('drop', this.handleDrop);
+    }
+
     handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
         this.setState({ searchTerm: event.target.value });
     }
@@ -129,11 +143,11 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         );
     }
 
-    handleDragOver(event: React.DragEvent) {
+    handleDragOver(event: DragEvent) {
         event.preventDefault();
     }
 
-    handleDragEnter(event: React.DragEvent) {
+    handleDragEnter(event: DragEvent) {
         event.preventDefault();
         this.setState({ isDragOver: true });
     }
@@ -142,12 +156,15 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.setState({ isDragOver: false });
     }
 
-    handleDrop(event: React.DragEvent) {
+    handleDrop(event: DragEvent) {
         event.preventDefault();
-        const files = event.dataTransfer.files;
-        this.handleFileUpload(files);
+        const files = event.dataTransfer?.files; // Use optional chaining to avoid null errors
+        if (files && files.length > 0) {
+            this.handleFileUpload(files);
+        }
         this.setState({ isDragOver: false });
     }
+    
 
     render() {
         const filteredFiles = this.getFilteredFiles();
@@ -192,12 +209,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
 
                 <div
                     className={`drop-zone ${isDragOver ? 'drag-over' : ''}`}
-                    onDragOver={this.handleDragOver}
-                    onDragEnter={this.handleDragEnter}
-                    onDragLeave={this.handleDragLeave}
-                    onDrop={this.handleDrop}
                 >
-                    {isDragOver ? 'Drop files here' : 'Drag and drop files here, or click to upload'}
+                    {isDragOver ? 'Drop files anywhere on the page' : 'Drag and drop files anywhere on the page'}
                 </div>
 
                 <div className="files-list">
