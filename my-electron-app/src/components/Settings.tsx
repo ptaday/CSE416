@@ -1,12 +1,10 @@
 import React from 'react';
 
-// Define an interface for component props
 interface SettingsProps {
     isDarkTheme: boolean; // Prop for dark theme
     onThemeChange: (isDarkTheme: boolean) => void; // Function prop for theme change
 }
 
-// Define an interface for component state
 interface SettingsState {
     selectedOption: 'appearance' | 'notifications'; // Track the selected option
 }
