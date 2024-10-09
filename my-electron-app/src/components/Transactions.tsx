@@ -1,19 +1,21 @@
 import React, { useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
 
-export function Transactions() {
-    const [searchTerm, setSearchTerm] = useState<string>(''); // Define searchTerm as a string
+interface TransactionsProps {
+    isDarkTheme: boolean; 
+}
 
-    // Function to handle search input
+export function Transactions({ isDarkTheme }: TransactionsProps) {
+    const [searchTerm, setSearchTerm] = useState<string>(''); 
+
     const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         setSearchTerm(event.target.value);
     };
 
-    // Placeholder for filtered transactions based on searchTerm
-    const filteredTransactions: Array<{ id: number; name: string }> = []; // Adjust this type as needed
+    const filteredTransactions: Array<{ id: number; name: string }> = []; 
 
     return (
-        <div className="transactions-container">
+        <div className={`transactions-container ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
             <h3>Transactions</h3>
             <div className="search-bar">
                 <input

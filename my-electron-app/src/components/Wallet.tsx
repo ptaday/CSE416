@@ -1,5 +1,9 @@
 import React from 'react';
-import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight } from 'react-icons/fa';
+import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight, FaCopy } from 'react-icons/fa';
+
+interface WalletProps {
+    isDarkTheme: boolean; // Prop to indicate the current theme
+}
 
 // Define the state interface for the Wallet component
 interface WalletState {
@@ -10,10 +14,11 @@ interface WalletState {
     receiverID: string; 
     transferAmount: string; 
     transferReason: string; 
+    copied: boolean;
 }
 
-export class Wallet extends React.Component<{}, WalletState> {
-    constructor(props: {}) {
+export class Wallet extends React.Component<WalletProps, WalletState> {
+    constructor(props: WalletProps) {
         super(props);
         this.state = {
             currentBalance: 1000,  // Placeholder initial value
@@ -22,11 +27,13 @@ export class Wallet extends React.Component<{}, WalletState> {
             monthlySpendings: 150,    // Placeholder value
             receiverID: '',
             transferAmount: '',
-            transferReason: ''
+            transferReason: '',
+            copied: false
         };
 
         this.handleTransfer = this.handleTransfer.bind(this);
         this.handleChange = this.handleChange.bind(this);
+        this.copyWalletID = this.copyWalletID.bind(this);
     }
 
     handleChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -46,29 +53,44 @@ export class Wallet extends React.Component<{}, WalletState> {
         });
     }
 
+    copyWalletID() {
+        const { walletID } = this.state;
+        navigator.clipboard.writeText(walletID).then(() => {
+            this.setState({ copied: true });
+            setTimeout(() => this.setState({ copied: false }), 1000);
+        }).catch(err => {
+            console.error('Failed to copy text: ', err);
+        });
+    }
+
     render() {
-        const { currentBalance, walletID, monthlyEarnings, monthlySpendings } = this.state;
+        const { currentBalance, walletID, monthlyEarnings, monthlySpendings, copied } = this.state;
+        const { isDarkTheme } = this.props;  // Get the theme prop
 
         return (
-            <div className="wallet-container">
-                <div className="wallet-block">
+            <div className={`wallet-container ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
+                <div id = 'current-balance' className="wallet-block">
                     <h3>Current Balance <FaMoneyBillWave /></h3>
-                    <p>${currentBalance}</p>
+                    <p>{currentBalance}</p>
                 </div>
-                <div className="wallet-block">
+                <div className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
                     <h3>Wallet ID <FaWallet /> </h3>
-                    <p>{walletID}</p>
+                    <p>
+                        {walletID} 
+                        <FaCopy style={{ cursor: 'pointer' }} onClick={this.copyWalletID} /> 
+                        {copied && <span style={{ color: '#0d47a1' }}>Copied!</span>}
+                    </p>
                 </div>
-                <div className="wallet-block">
+                <div  className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
                     <h3>Monthly Earnings <FaChartLine /></h3>
-                    <p>${monthlyEarnings}</p>
+                    <p>{monthlyEarnings}</p>
                 </div>
-                <div className="wallet-block">
+                <div  className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
                     <h3>Monthly Spending <FaChartLine /></h3>
-                    <p>${monthlySpendings}</p>
+                    <p>{monthlySpendings}</p>
                 </div>
                 <br />
-                <div className="wallet-block transfer-block">
+                <div  className={`wallet-block transfer-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
                     <h3>Transfer Money <FaArrowRight /></h3>
                     <input 
                         type="text" 
@@ -96,7 +118,7 @@ export class Wallet extends React.Component<{}, WalletState> {
                     <br />
                     <button onClick={this.handleTransfer}>Send</button>
                 </div>
-                <div className="wallet-block graph-block">
+                <div className={`wallet-block graph-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
                     <h3>Revenue Graph</h3>
                     <div className="graph-placeholder">
                         {/* Placeholder for the revenue graph */}
