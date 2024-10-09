@@ -44,6 +44,20 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.handleDrop = this.handleDrop.bind(this);
     }
 
+    componentDidMount() {
+        window.addEventListener('dragover', this.handleDragOver);
+        window.addEventListener('dragenter', this.handleDragEnter);
+        window.addEventListener('dragleave', this.handleDragLeave);
+        window.addEventListener('drop', this.handleDrop);
+    }
+
+    componentWillUnmount() {
+        window.removeEventListener('dragover', this.handleDragOver);
+        window.removeEventListener('dragenter', this.handleDragEnter);
+        window.removeEventListener('dragleave', this.handleDragLeave);
+        window.removeEventListener('drop', this.handleDrop);
+    }
+
     handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
         this.setState({ searchTerm: event.target.value });
     }
@@ -129,11 +143,11 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         );
     }
 
-    handleDragOver(event: React.DragEvent) {
+    handleDragOver(event: DragEvent) {
         event.preventDefault();
     }
 
-    handleDragEnter(event: React.DragEvent) {
+    handleDragEnter(event: DragEvent) {
         event.preventDefault();
         this.setState({ isDragOver: true });
     }
@@ -142,12 +156,15 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.setState({ isDragOver: false });
     }
 
-    handleDrop(event: React.DragEvent) {
+    handleDrop(event: DragEvent) {
         event.preventDefault();
-        const files = event.dataTransfer.files;
-        this.handleFileUpload(files);
+        const files = event.dataTransfer?.files; // Use optional chaining to avoid null errors
+        if (files && files.length > 0) {
+            this.handleFileUpload(files);
+        }
         this.setState({ isDragOver: false });
     }
+    
 
     render() {
         const filteredFiles = this.getFilteredFiles();
@@ -167,18 +184,21 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     <FaSearch />
                 </div>
 
-                <div className="buttons-container">
-                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
-                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
-                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
-                    
-                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
-                            <FaUpload /> Upload File
-                        </button>
-                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
-                            <FaTrash /> {showTrash ? 'Back to Files' : 'Review Trash'}
-                        </button>
+                <div className="filter-buttons">
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
                 </div>
+
+                <div className="action-buttons">
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
+                        <FaUpload /> Upload File
+                    </button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
+                        <FaTrash /> {showTrash ? 'Back to Files' : 'Review Trash'}
+                    </button>
+                </div>
+
                 <input
                     type="file"
                     ref={this.fileInputRef}
@@ -189,12 +209,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
 
                 <div
                     className={`drop-zone ${isDragOver ? 'drag-over' : ''}`}
-                    onDragOver={this.handleDragOver}
-                    onDragEnter={this.handleDragEnter}
-                    onDragLeave={this.handleDragLeave}
-                    onDrop={this.handleDrop}
                 >
-                    {isDragOver ? 'Drop files here' : 'Drag and drop files here, or click to upload'}
+                    {isDragOver ? 'Drop files anywhere on the page' : 'Drag and drop files anywhere on the page'}
                 </div>
 
                 <div className="files-list">
@@ -205,23 +221,23 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                 <div className="file-actions">
                                     {!showTrash && (
                                         <>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleShareFile(file.name)}>
+                                            <button className="action-button" onClick={() => this.handleShareFile(file.name)}>
                                                 <FaShareAlt /> Share
                                             </button>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}>
+                                            <button className="action-button" onClick={() => this.handleDownloadFile(file.name)}>
                                                 <FaDownload /> Download
                                             </button>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleTrashFile(file.name)}>
+                                            <button className="action-button" onClick={() => this.handleTrashFile(file.name)}>
                                                 <FaTrash /> Trash
                                             </button>
                                         </>
                                     )}
                                     {showTrash && (
                                         <>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleTrashFile(file.name)}>
+                                            <button className="action-button" onClick={() => this.handleTrashFile(file.name)}>
                                                 Restore
                                             </button>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'} delete-button`} onClick={() => this.deleteFileForever(file.name)}>
+                                            <button className="action-button delete-button" onClick={() => this.deleteFileForever(file.name)}>
                                                 Delete Forever
                                             </button>
                                         </>
