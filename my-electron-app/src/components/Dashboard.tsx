@@ -1,7 +1,8 @@
 import React from 'react';
-import { FaUserCircle, FaWallet, FaBell } from 'react-icons/fa';
-import { Transactions } from './Transactions';
+import {FaBell } from 'react-icons/fa';
+import { Peers } from './Peers';
 import { CloudDrive } from './CloudDrive';
+import { Transactions } from './Transactions';
 import { Wallet } from './Wallet';
 import { Settings } from './Settings';
 
@@ -11,7 +12,7 @@ interface DashboardState {
     toggleDrive: boolean;
     toggleWallet: boolean;
     toggleSettings: boolean;
-    toggleBackups: boolean;
+    togglePeers: boolean;
     isDarkTheme: boolean; // State to track theme
 }
 
@@ -26,7 +27,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
-            toggleBackups: false,
+            togglePeers: false,
             isDarkTheme: false // Initial state for theme
         };
 
@@ -34,17 +35,17 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
         this.toggleDrive = this.toggleDrive.bind(this);
         this.toggleWallet = this.toggleWallet.bind(this);
         this.toggleSettings = this.toggleSettings.bind(this);
-        this.toggleBackups = this.toggleBackups.bind(this);
+        this.togglePeers = this.togglePeers.bind(this);
         this.handleThemeChange = this.handleThemeChange.bind(this); 
     }
 
-    toggleTransactions() {
+    togglePeers() {
         this.setState({
-            toggleTransactions: true,
+            toggleTransactions: false,
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
-            toggleBackups: false
+            togglePeers: true
         });
     }
 
@@ -54,7 +55,17 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: true,
             toggleWallet: false,
             toggleSettings: false,
-            toggleBackups: false
+            togglePeers: false
+        });
+    }
+
+    toggleTransactions() {
+        this.setState({
+            toggleTransactions: true,
+            toggleDrive: false,
+            toggleWallet: false,
+            toggleSettings: false,
+            togglePeers: false
         });
     }
 
@@ -64,7 +75,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: true,
             toggleSettings: false,
-            toggleBackups: false
+            togglePeers: false
         });
     }
 
@@ -74,33 +85,24 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: true,
-            toggleBackups: false
+            togglePeers: false
         });
     }
 
-    toggleBackups() {
-        this.setState({
-            toggleTransactions: false,
-            toggleDrive: false,
-            toggleWallet: false,
-            toggleSettings: false,
-            toggleBackups: true
-        });
-    }
 
     handleThemeChange(isDarkTheme: boolean) {
         this.setState({ isDarkTheme }); // Update the theme state
     }
 
     renderContent() {
-        const { toggleTransactions, toggleDrive, toggleWallet, toggleSettings, toggleBackups, isDarkTheme } = this.state;
+        const { toggleTransactions, toggleDrive, toggleWallet, toggleSettings, togglePeers, isDarkTheme } = this.state;
 
         if (toggleTransactions) {
-            return <Transactions />;
+            return <Transactions isDarkTheme={isDarkTheme}/>;
         } else if (toggleDrive) {
             return <CloudDrive isDarkTheme={isDarkTheme} />;
         } else if (toggleWallet) {
-            return <Wallet />;
+            return <Wallet isDarkTheme={isDarkTheme} />;
         } else if (toggleSettings) {
             return (
                 <Settings
@@ -108,8 +110,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                     onThemeChange={this.handleThemeChange} 
                 />
             );
-        } else if (toggleBackups) {
-            return <div>Backups Content</div>;
+        } else if (togglePeers) {
+            return <Peers isDarkTheme={isDarkTheme} />;
         }
 
         return null; // Default return for rendering content
@@ -121,23 +123,22 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
         return (
             <div className={isDarkTheme ? 'dark-theme' : 'light-theme'}> {/* Apply the theme */}
                 {/* Navigation Bar */}
-                <nav className="navbar">
+                <nav className= "{isDarkTheme ? 'dark-theme' : 'light-theme'} navbar">
                     <div className="nav-right">
-                        <FaUserCircle /> Account
+                        Beluga
                     </div>
                     <div className="nav-left">
-                        <FaWallet/>
                         <FaBell/>
                     </div>
                 </nav>
 
                 <div id="menu" className="menu">
                     <button
-                        id="transactions"
-                        className={`menu-button ${this.state.toggleTransactions ? 'active' : 'inactive'}`}
-                        onClick={this.toggleTransactions}
+                        id="peers"
+                        className={`menu-button ${this.state.togglePeers ? 'active' : 'inactive'}`}
+                        onClick={this.togglePeers}
                     >
-                        Transactions
+                        Peers
                     </button>
                     <button
                         id="cloudDrive"
@@ -145,6 +146,13 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                         onClick={this.toggleDrive}
                     >
                         Cloud Drive
+                    </button>
+                    <button
+                        id="transactions"
+                        className={`menu-button ${this.state.toggleTransactions ? 'active' : 'inactive'}`}
+                        onClick={this.toggleTransactions}
+                    >
+                        Transactions
                     </button>
                     <button
                         id="wallet"
@@ -159,13 +167,6 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                         onClick={this.toggleSettings}
                     >
                         Settings
-                    </button>
-                    <button
-                        id="backUps"
-                        className={`menu-button ${this.state.toggleBackups ? 'active' : 'inactive'}`}
-                        onClick={this.toggleBackups}
-                    >
-                        Backups
                     </button>
                 </div>
 
