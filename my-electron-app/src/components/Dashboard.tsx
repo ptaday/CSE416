@@ -1,10 +1,12 @@
 import React from 'react';
-import {FaBell } from 'react-icons/fa';
 import { Peers } from './Peers';
 import { CloudDrive } from './CloudDrive';
 import { Transactions } from './Transactions';
 import { Wallet } from './Wallet';
 import { Settings } from './Settings';
+import { Main } from './Main';
+import Belugalight from './Beluga-Light.gif';
+import Belugadark from './Beluga-Dark.gif';
 
 // Define an interface for component state
 interface DashboardState {
@@ -13,11 +15,16 @@ interface DashboardState {
     toggleWallet: boolean;
     toggleSettings: boolean;
     togglePeers: boolean;
+    toggleLogout: boolean,
+    showLogoutPopup: boolean;
     isDarkTheme: boolean; // State to track theme
 }
 
 // Define a type for the component props (if any in the future)
-interface DashboardProps {}
+interface DashboardProps {
+    walletId: string; // Prop for wallet ID
+    walletBalance: number; // Prop for wallet balance
+}
 
 export class Dashboard extends React.Component<DashboardProps, DashboardState> {
     constructor(props: DashboardProps) {
@@ -28,6 +35,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleWallet: false,
             toggleSettings: false,
             togglePeers: false,
+            toggleLogout: false,
+            showLogoutPopup: false,
             isDarkTheme: false // Initial state for theme
         };
 
@@ -36,6 +45,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
         this.toggleWallet = this.toggleWallet.bind(this);
         this.toggleSettings = this.toggleSettings.bind(this);
         this.togglePeers = this.togglePeers.bind(this);
+        this.toggleLogout = this.toggleLogout.bind(this); 
+        this.toggleLogoutPopup = this.toggleLogoutPopup.bind(this);
         this.handleThemeChange = this.handleThemeChange.bind(this); 
     }
 
@@ -45,7 +56,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
-            togglePeers: true
+            togglePeers: true,
+            toggleLogout: false,
         });
     }
 
@@ -55,7 +67,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: true,
             toggleWallet: false,
             toggleSettings: false,
-            togglePeers: false
+            togglePeers: false,
+            toggleLogout: false,
         });
     }
 
@@ -65,7 +78,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
-            togglePeers: false
+            togglePeers: false,
+            toggleLogout: false,
         });
     }
 
@@ -75,7 +89,8 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: true,
             toggleSettings: false,
-            togglePeers: false
+            togglePeers: false,
+            toggleLogout: false,
         });
     }
 
@@ -85,10 +100,26 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: true,
-            togglePeers: false
+            togglePeers: false,
+            toggleLogout: false,
         });
     }
 
+    toggleLogout() {
+        this.setState({
+            toggleTransactions: false,
+            toggleDrive: false,
+            toggleWallet: false,
+            toggleSettings: false,
+            togglePeers: false,
+            showLogoutPopup: false,
+            toggleLogout: true,
+        });
+    }
+
+    toggleLogoutPopup() {
+        this.setState(prevState => ({ showLogoutPopup: !prevState.showLogoutPopup })); // Toggle popup visibility
+    }
 
     handleThemeChange(isDarkTheme: boolean) {
         this.setState({ isDarkTheme }); // Update the theme state
@@ -98,12 +129,12 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
         const { toggleTransactions, toggleDrive, toggleWallet, toggleSettings, togglePeers, isDarkTheme } = this.state;
 
         if (toggleTransactions) {
-            return <Transactions isDarkTheme={isDarkTheme}/>;
-        } else if (toggleDrive) {
+            return <Transactions isDarkTheme={isDarkTheme} walletBalance={this.props.walletBalance} />;
+          } else if (toggleDrive) {
             return <CloudDrive isDarkTheme={isDarkTheme} />;
-        } else if (toggleWallet) {
-            return <Wallet isDarkTheme={isDarkTheme} />;
-        } else if (toggleSettings) {
+          } else if (toggleWallet) {
+            return <Wallet isDarkTheme={isDarkTheme} walletId={this.props.walletId} walletBalance={this.props.walletBalance} />; // Pass props to Wallet
+          } else if (toggleSettings) {      
             return (
                 <Settings
                     isDarkTheme={isDarkTheme}
@@ -118,17 +149,21 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
     }
 
     render() {
-        const { isDarkTheme } = this.state;
+        const { toggleLogout, showLogoutPopup, isDarkTheme } = this.state;
 
-        return (
+        if (toggleLogout){
+            return <Main></Main>
+        }
+        else return (
             <div className={isDarkTheme ? 'dark-theme' : 'light-theme'}> {/* Apply the theme */}
                 {/* Navigation Bar */}
                 <nav className= "{isDarkTheme ? 'dark-theme' : 'light-theme'} navbar">
                     <div className="nav-right">
                         Beluga
                     </div>
-                    <div className="nav-left">
-                        <FaBell/>
+                    <div className = 'nav-left'>
+                    {!isDarkTheme &&  <img className = 'nav-logo-light' src={Belugalight} />}
+                    {isDarkTheme &&  <img className = 'nav-logo-dark' src={Belugadark} />}
                     </div>
                 </nav>
 
@@ -168,7 +203,25 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                     >
                         Settings
                     </button>
+                    <button
+                        id="logout"
+                        className={`menu-button ${this.state.toggleLogout ? 'active' : 'inactive'}`}
+                        onClick={this.toggleLogoutPopup}
+                    >
+                        Logout
+                    </button>
                 </div>
+
+                {showLogoutPopup && (
+                    <div className="popup-overlay">
+                        <div className="popup">
+                            <h2>Confirm Logout</h2>
+                            <p>Are you sure you want to log out?</p>
+                            <button onClick={this.toggleLogout}>Yes</button>
+                            <button onClick={this.toggleLogoutPopup}>No</button>
+                        </div>
+                    </div>
+                )}
 
                 <div id="content">
                     <div id="contentScreen">
