@@ -1,24 +1,20 @@
 {
   "compilerOptions": {
+    "types": ["node"],
     "target": "ES2022",
     "lib": ["ES2023"],
-    "module": "ESNext",
+    "module": "CommonJS", // Keep this as CommonJS
     "skipLibCheck": true,
-
-    /* Bundler mode */
-    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "moduleResolution": "node",
     "isolatedModules": true,
-    "moduleDetection": "force",
     "noEmit": false, // Allow output
-     "outDir": "./dist",
-
-    /* Linting */
+    "outDir": "./dist",
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["vite.config.ts", "main.ts", "preload.ts"] // Include your main and preload files
+  "include": ["main.ts", "preload.ts"] // Include your main and preload files
 }
-
 
