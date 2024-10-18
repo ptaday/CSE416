@@ -231,13 +231,10 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     <FaSearch />
                 </div>
 
-                <div className="filter-buttons">
+                <div className="action-buttons filter-buttons">
                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
-                </div>
-
-                <div className="action-buttons">
                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
                         <FaUpload /> Upload File
                     </button>

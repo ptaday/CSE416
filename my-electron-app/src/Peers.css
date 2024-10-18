@@ -1,0 +1,65 @@
+.peers-container {
+    padding: 20px;
+  }
+  
+  .upload-button {
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    margin-bottom: 20px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .upload-button:hover {
+    background-color: #45a049;
+  }
+  
+  .search-bar {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 20px;
+  }
+  
+  .file-list-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .file-list-table th, .file-list-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+  }
+  
+  .file-list-table th {
+    background-color: #f2f2f2;
+    text-align: left;
+  }
+  
+  .modal {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 1000;
+    background-color: white;
+    padding: 20px;
+    border: 2px solid #ddd;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .modal-content {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .modal-buttons {
+    margin-top: 20px;
+  }
+
+  .modal-buttons button {
+    padding: 10px 15px;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+  
