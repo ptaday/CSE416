@@ -3,7 +3,9 @@ import { FaSearch } from 'react-icons/fa';
 
 interface TransactionsProps {
     isDarkTheme: boolean; 
+    walletBalance: number; // Prop for wallet balance
 }
+
 
 export function Transactions({ isDarkTheme }: TransactionsProps) {
     const [searchTerm, setSearchTerm] = useState<string>(''); 
