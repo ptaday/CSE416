@@ -1,16 +1,27 @@
 import React from 'react';
-import { FaSearch, FaUpload, FaShareAlt, FaTrash, FaDownload } from 'react-icons/fa';
+import { FaSearch, FaUpload, FaShareAlt, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
 
 interface CloudDriveProps {
     isDarkTheme: boolean;
 }
 
+interface FileItem {
+    name: string;
+    trashed: boolean;
+    searchTerm: string;
+    fileData?: Blob;
+    price: number | null;  // Allow price to be null
+}
+
 interface CloudDriveState {
     searchTerm: string;
     filterDate: string | null;
-    files: Array<{ name: string; trashed: boolean; searchTerm: string; fileData?: Blob }>;
+    files: Array<FileItem>;
     showTrash: boolean;
     isDragOver: boolean;
+    editingFile: FileItem | null; // Track the file being edited
+    newName: string; // New name input
+    newPrice: number | null; // New price input
 }
 
 export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState> {
@@ -24,6 +35,9 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
             files: [],
             showTrash: false,
             isDragOver: false,
+            editingFile: null,
+            newName: '',
+            newPrice: null,
         };
 
         this.fileInputRef = React.createRef();
@@ -37,6 +51,9 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.handleDownloadFile = this.handleDownloadFile.bind(this);
         this.toggleShowTrash = this.toggleShowTrash.bind(this);
         this.deleteFileForever = this.deleteFileForever.bind(this);
+        this.startEditing = this.startEditing.bind(this);
+        this.handleEditChange = this.handleEditChange.bind(this);
+        this.saveChanges = this.saveChanges.bind(this);
 
         this.handleDragOver = this.handleDragOver.bind(this);
         this.handleDragEnter = this.handleDragEnter.bind(this);
@@ -73,6 +90,7 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                 trashed: false,
                 searchTerm: file.name.toLowerCase(),
                 fileData: new Blob([file], { type: file.type }),
+                price: null, // Initialize price as null
             }));
             this.setState(prevState => ({
                 files: [...prevState.files, ...uploadedFiles],
@@ -136,6 +154,36 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         }));
     }
 
+    startEditing(file: FileItem) {
+        this.setState({ editingFile: file, newName: file.name, newPrice: file.price });
+    }
+
+    handleEditChange(event: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'price') {
+        if (field === 'name') {
+            this.setState({ newName: event.target.value });
+        } else if (field === 'price') {
+            const priceValue = parseFloat(event.target.value);
+            this.setState({ newPrice: isNaN(priceValue) ? null : priceValue });
+        }
+    }
+
+    saveChanges() {
+        const { editingFile, newName, newPrice } = this.state;
+
+        if (editingFile) {
+            this.setState(prevState => ({
+                files: prevState.files.map(file =>
+                    file.name === editingFile.name
+                        ? { ...file, name: newName, price: newPrice }
+                        : file
+                ),
+                editingFile: null, // Clear editing state
+                newName: '', // Reset new name input
+                newPrice: null, // Reset new price input
+            }));
+        }
+    }
+
     getFilteredFiles() {
         const { searchTerm, files, showTrash } = this.state;
         return files.filter(file =>
@@ -164,12 +212,11 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         }
         this.setState({ isDragOver: false });
     }
-    
 
     render() {
         const filteredFiles = this.getFilteredFiles();
-        const { isDarkTheme } = this.props;  // Use this.props.isDarkTheme
-        const { isDragOver, showTrash } = this.state;
+        const { isDarkTheme } = this.props;  
+        const { isDragOver, showTrash, editingFile, newName, newPrice } = this.state;
 
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
@@ -192,7 +239,7 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                         <FaUpload /> Upload File
                     </button>
                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
-                        <FaTrash /> {showTrash ? 'Back to Files' : 'Review Trash'}
+                        {showTrash ? 'Show Active Files' : 'Show Trash'}
                     </button>
                 </div>
 
@@ -200,52 +247,55 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     type="file"
                     ref={this.fileInputRef}
                     style={{ display: 'none' }}
-                    multiple
                     onChange={(e) => this.handleFileUpload(e.target.files)}
+                    multiple
                 />
 
-                <div
-                    className={`drop-zone ${isDragOver ? 'drag-over' : ''}`}
-                >
-                    {isDragOver ? 'Drop files anywhere on the page' : 'Drag and drop files anywhere on the page'}
+                <div className={`drop-area ${isDragOver ? 'drag-over' : ''}`}>
+                    <p>{showTrash ? 'Trashed files' : 'Drag and drop files here'}</p>
                 </div>
 
-                <div className="files-list">
+                <div className="file-list">
                     {filteredFiles.length > 0 ? (
                         filteredFiles.map((file, index) => (
                             <div key={index} className="file-item">
-                                <span>{file.name}</span>
-                                <div className="file-actions">
-                                    {!showTrash && (
-                                        <>
-                                            <button className="action-button" onClick={() => this.handleShareFile(file.name)}>
-                                                <FaShareAlt /> Share
-                                            </button>
-                                            <button className="action-button" onClick={() => this.handleDownloadFile(file.name)}>
-                                                <FaDownload /> Download
-                                            </button>
-                                            <button className="action-button" onClick={() => this.handleTrashFile(file.name)}>
-                                                <FaTrash /> Trash
-                                            </button>
-                                        </>
-                                    )}
-                                    {showTrash && (
-                                        <>
-                                            <button className="action-button" onClick={() => this.handleTrashFile(file.name)}>
-                                                Restore
-                                            </button>
-                                            <button className="action-button delete-button" onClick={() => this.deleteFileForever(file.name)}>
-                                                Delete Forever
-                                            </button>
-                                        </>
-                                    )}
-                                </div>
+                                {editingFile?.name === file.name ? (
+                                    <div className="editing-file">
+                                        <input
+                                            type="text"
+                                            value={newName}
+                                            onChange={(e) => this.handleEditChange(e, 'name')}
+                                        />
+                                        <input
+                                            type="number"
+                                            value={newPrice !== null ? newPrice : ''}
+                                            onChange={(e) => this.handleEditChange(e, 'price')}
+                                            placeholder="Price (optional)"
+                                        />
+                                        <button onClick={this.saveChanges}>Save</button>
+                                    </div>
+                                ) : (
+                                    <>
+                                        <span>{file.name} - Price: {file.price !== null ? file.price.toFixed(2) : 0} BTC </span>
+                                        <div className="file-actions">
+                                        {!file.trashed && ( <button onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>)}
+                                        {!file.trashed && (<button onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>)}
+                                        {!file.trashed && (   <button onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>)}
+                                            <button onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
+                                            {file.trashed && (
+                                                <button onClick={() => this.deleteFileForever(file.name)}><FaUndo /> Delete Forever</button>
+                                            )}
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         ))
                     ) : (
-                        <p>{showTrash ? 'No files in trash.' : 'No files found.'}</p>
+                        <p>No files found.</p>
                     )}
                 </div>
+
+               
             </div>
         );
     }
