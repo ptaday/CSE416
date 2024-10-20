@@ -1,5 +1,6 @@
 import React from 'react';
 import { FaSearch, FaUpload, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
+import '../CloudDrive.css';
 
 interface CloudDriveProps {
     isDarkTheme: boolean;
@@ -8,9 +9,8 @@ interface CloudDriveProps {
 interface FileItem {
     name: string;
     trashed: boolean;
-    searchTerm: string;
     fileData?: Blob;
-    size: number; // Added size field
+    dateUploaded: Date; 
 }
 
 interface CloudDriveState {
@@ -19,8 +19,9 @@ interface CloudDriveState {
     files: Array<FileItem>;
     showTrash: boolean;
     isDragOver: boolean;
-    editingFile: FileItem | null; // Track the file being edited
-    newName: string; // New name input
+    editingFile: FileItem | null;
+    newName: string;
+    newDate: Date | null; 
 }
 
 export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState> {
@@ -35,7 +36,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
             showTrash: false,
             isDragOver: false,
             editingFile: null,
-            newName: '', // New name input
+            newName: '',
+            newDate: null, 
         };
 
         this.fileInputRef = React.createRef();
@@ -51,25 +53,9 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.startEditing = this.startEditing.bind(this);
         this.handleEditChange = this.handleEditChange.bind(this);
         this.saveChanges = this.saveChanges.bind(this);
-
         this.handleDragOver = this.handleDragOver.bind(this);
-        this.handleDragEnter = this.handleDragEnter.bind(this);
         this.handleDragLeave = this.handleDragLeave.bind(this);
         this.handleDrop = this.handleDrop.bind(this);
-    }
-
-    componentDidMount() {
-        window.addEventListener('dragover', this.handleDragOver);
-        window.addEventListener('dragenter', this.handleDragEnter);
-        window.addEventListener('dragleave', this.handleDragLeave);
-        window.addEventListener('drop', this.handleDrop);
-    }
-
-    componentWillUnmount() {
-        window.removeEventListener('dragover', this.handleDragOver);
-        window.removeEventListener('dragenter', this.handleDragEnter);
-        window.removeEventListener('dragleave', this.handleDragLeave);
-        window.removeEventListener('drop', this.handleDrop);
     }
 
     handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -85,9 +71,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
             const uploadedFiles = Array.from(files).map(file => ({
                 name: file.name,
                 trashed: false,
-                searchTerm: file.name.toLowerCase(),
                 fileData: new Blob([file], { type: file.type }),
-                size: file.size, // Set size from File object
+                dateUploaded: new Date(),
             }));
             this.setState(prevState => ({
                 files: [...prevState.files, ...uploadedFiles],
@@ -112,26 +97,15 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
 
     handleDownloadFile(fileName: string) {
         const file = this.state.files.find(file => file.name === fileName);
-
-        if (file) {
-            if (file.fileData) {
-                const fileURL = URL.createObjectURL(file.fileData);
-                const a = document.createElement('a');
-                a.href = fileURL;
-                a.download = file.name;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-                URL.revokeObjectURL(fileURL);
-            } else {
-                const downloadUrl = `/path-to-backend/${fileName}`;  // Replace with actual URL if needed
-                const a = document.createElement('a');
-                a.href = downloadUrl;
-                a.download = fileName;
-                document.body.appendChild(a);
-                a.click();
-                document.body.removeChild(a);
-            }
+        if (file && file.fileData) {
+            const fileURL = URL.createObjectURL(file.fileData);
+            const a = document.createElement('a');
+            a.href = fileURL;
+            a.download = file.name;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(fileURL);
         }
     }
 
@@ -148,42 +122,58 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
     }
 
     startEditing(file: FileItem) {
-        this.setState({ editingFile: file, newName: file.name });
+        this.setState({ editingFile: file, newName: file.name, newDate: file.dateUploaded });
     }
 
-    handleEditChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.setState({ newName: event.target.value });
+    handleEditChange(event: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'date') {
+        if (field === 'name') {
+            this.setState({ newName: event.target.value });
+        } else if (field === 'date') {
+            this.setState({ newDate: new Date(event.target.value) });
+        }
     }
 
     saveChanges() {
-        const { editingFile, newName } = this.state;
-
+        const { editingFile, newName, newDate } = this.state;
         if (editingFile) {
             this.setState(prevState => ({
                 files: prevState.files.map(file =>
                     file.name === editingFile.name
-                        ? { ...file, name: newName }
+                        ? { ...file, name: newName, dateUploaded: newDate ?? file.dateUploaded }
                         : file
                 ),
-                editingFile: null, // Clear editing state
-                newName: '', // Reset new name input
+                editingFile: null,
+                newName: '',
+                newDate: null,
             }));
         }
     }
 
     getFilteredFiles() {
-        const { searchTerm, files, showTrash } = this.state;
+        const { searchTerm, filterDate, files, showTrash } = this.state;
+
+        const dateLimit = (fileDate: Date): boolean => {
+            const today = new Date();
+            if (filterDate === 'today') {
+                return fileDate.toDateString() === today.toDateString();
+            } else if (filterDate === 'this-week') {
+                const oneWeekAgo = new Date(today.setDate(today.getDate() - 7));
+                return fileDate >= oneWeekAgo;
+            } else if (filterDate === 'this-month') {
+                const oneMonthAgo = new Date(today.setMonth(today.getMonth() - 1));
+                return fileDate >= oneMonthAgo;
+            }
+            return true;
+        };
+
         return files.filter(file =>
-            file.trashed === showTrash && 
-            file.name.toLowerCase().includes(searchTerm.toLowerCase()) // Match against the name
+            file.trashed === showTrash &&
+            file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
+            dateLimit(file.dateUploaded)
         );
     }
 
-    handleDragOver(event: DragEvent) {
-        event.preventDefault();
-    }
-
-    handleDragEnter(event: DragEvent) {
+    handleDragOver(event: React.DragEvent<HTMLDivElement>) {
         event.preventDefault();
         this.setState({ isDragOver: true });
     }
@@ -192,20 +182,20 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.setState({ isDragOver: false });
     }
 
-    handleDrop(event: DragEvent) {
+    handleDrop(event: React.DragEvent<HTMLDivElement>) {
         event.preventDefault();
-        const files = event.dataTransfer?.files; // Use optional chaining to avoid null errors
+        const files = event.dataTransfer.files;
         if (files && files.length > 0) {
             this.handleFileUpload(files);
         }
-        this.setState({ isDragOver: false });
+        this.setState({ isDragOver: false }); // Reset after drop
     }
 
     render() {
         const filteredFiles = this.getFilteredFiles();
-        const { isDarkTheme } = this.props;  
-        const { isDragOver, showTrash, editingFile, newName } = this.state;
-
+        const { isDarkTheme } = this.props;
+        const { isDragOver, showTrash, editingFile, newName, newDate } = this.state;
+    
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
                 <h3>Cloud Drive</h3>
@@ -218,19 +208,17 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     />
                     <FaSearch />
                 </div>
-
+    
                 <div className="action-buttons filter-buttons">
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
-                        <FaUpload /> Upload File
-                    </button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
+                    <button onClick={() => this.handleDateFilter('today')}>Today</button>
+                    <button onClick={() => this.handleDateFilter('this-week')}>This Week</button>
+                    <button onClick={() => this.handleDateFilter('this-month')}>This Month</button>
+                    <button onClick={this.triggerFileInputClick}><FaUpload /> Upload</button>
+                    <button onClick={this.toggleShowTrash}>
                         {showTrash ? 'Show Active Files' : 'Show Trash'}
                     </button>
                 </div>
-
+    
                 <input
                     type="file"
                     ref={this.fileInputRef}
@@ -238,56 +226,76 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     onChange={(e) => this.handleFileUpload(e.target.files)}
                     multiple
                 />
-
-                <div className={`drop-area ${isDragOver ? 'drag-over' : ''}`}>
+    
+                <div
+                    className={`drop-area ${isDragOver ? 'drag-over' : ''}`}
+                    onDragOver={this.handleDragOver}
+                    onDragLeave={this.handleDragLeave}
+                    onDrop={this.handleDrop}
+                >
                     <p>{showTrash ? 'Trashed files' : 'Drag and drop files here'}</p>
                 </div>
-
-                <div className="file-list">
-                    {filteredFiles.length > 0 ? (
-                        filteredFiles.map((file, index) => (
-                            <div key={index} className="file-item">
-                                {editingFile?.name === file.name ? (
-                                    <div className="editing-file">
-                                        <input
-                                            type="text"
-                                            value={newName}
-                                            onChange={this.handleEditChange}
-                                        />
-                                        <button onClick={this.saveChanges}>Save</button>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <span>{file.name} - Size: {file.size} bytes</span>
-                                        <div className="file-actions">
-                                            {!file.trashed && (
-                                                <button onClick={() => this.handleDownloadFile(file.name)}>
-                                                    <FaDownload /> Download
-                                                </button>
-                                            )}
-                                            {!file.trashed && (
-                                                <button onClick={() => this.startEditing(file)}>
-                                                    <FaEdit /> Edit
-                                                </button>
-                                            )}
-                                            <button onClick={() => this.handleTrashFile(file.name)}>
-                                                <FaTrash /> {file.trashed ? 'Restore' : 'Trash'}
-                                            </button>
-                                            {file.trashed && (
-                                                <button onClick={() => this.deleteFileForever(file.name)}>
-                                                    <FaUndo /> Delete Forever
-                                                </button>
-                                            )}
-                                        </div>
-                                    </>
-                                )}
-                            </div>
-                        ))
-                    ) : (
-                        <p>No files found.</p>
-                    )}
-                </div>
+    
+                <div className="table-container"> {/* New wrapper for the table */}
+                    <table className="file-table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Date Uploaded</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {filteredFiles.length > 0 ? (
+                                filteredFiles.map((file, index) => (
+                                    <tr key={index}>
+                                        {editingFile?.name === file.name ? (
+                                            <>
+                                                <td>
+                                                    <input
+                                                        type="text"
+                                                        value={newName}
+                                                        onChange={(e) => this.handleEditChange(e, 'name')}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
+                                                        type="date"
+                                                        value={newDate ? newDate.toISOString().split('T')[0] : ''}
+                                                        onChange={(e) => this.handleEditChange(e, 'date')}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <button onClick={this.saveChanges}><FaEdit /> Save</button>
+                                                    <button onClick={() => this.setState({ editingFile: null })}><FaUndo /> Cancel</button>
+                                                </td>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <td>{file.name}</td>
+                                                <td>{file.dateUploaded.toDateString()}</td>
+                                                <td>
+                                                    <button onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
+                                                    <button onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
+                                                    <button onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
+                                                    {file.trashed && (
+                                                        <button onClick={() => this.deleteFileForever(file.name)}><FaTrash /> Delete Forever</button>
+                                                    )}
+                                                </td>
+                                            </>
+                                        )}
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan={3}>No files found.</td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div> {/* End of table wrapper */}
             </div>
         );
     }
+    
 }
