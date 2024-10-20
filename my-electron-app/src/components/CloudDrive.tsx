@@ -236,7 +236,7 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     <p>{showTrash ? 'Trashed files' : 'Drag and drop files here'}</p>
                 </div>
     
-                <div className="table-container"> {/* New wrapper for the table */}
+                <div className={`file-list ${isDragOver ? 'drag-over' : ''}`}>
                     <table className="file-table">
                         <thead>
                             <tr>
