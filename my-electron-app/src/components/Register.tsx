@@ -123,7 +123,7 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
     };
 
     render() {
-      const { passphrase, publicKey, username, error, showPassword, showPopup } = this.state;
+      const { passphrase, publicKey, username, error, showPassword, showPopup, encryptedPrivateKey } = this.state;
   
       if (publicKey) {
         return (
@@ -134,6 +134,15 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
               <textarea className="register-successful-input" readOnly value={username}></textarea>
               <FaRegCopy
                 onClick={() => this.copyToClipboard(username)}
+                style={{ cursor: 'pointer', marginLeft: '10px', fontSize: '1.5em' }}
+                title="Copy to clipboard"
+              />
+            </div>
+            <div className="register-successful-row">
+              <label className="register-successful-label">Private Key</label>
+              <textarea className="register-successful-input" readOnly value={encryptedPrivateKey}></textarea>
+              <FaRegCopy
+                onClick={() => this.copyToClipboard(encryptedPrivateKey)}
                 style={{ cursor: 'pointer', marginLeft: '10px', fontSize: '1.5em' }}
                 title="Copy to clipboard"
               />
@@ -162,15 +171,18 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
       } else {
         return (
           <div className="register-container">
-            <form onSubmit={this.handleRegister}>
+            <form className = 'register-form' onSubmit={this.handleRegister}>
               <div className="password-container">
-                <label className="register-label"> Passphrase </label>
+                <div className="register-label">
+                <label id = 'register-label'>Set Passphrase </label>
                 <input
                   className="register-input"
                   type={showPassword ? 'text' : 'password'}
                   value={passphrase}
                   onChange={this.handlePassphraseChange}
-                  required // Keep this for browser validation
+                pattern="(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{14,})" 
+                title="Must be at least 14 characters, include an uppercase letter, a number, and a special character"
+                required
                 />
                 {showPassword ? (
                   <FaEyeSlash onClick={this.togglePasswordVisibility} className="eye-icon" title="Hide password" />
@@ -178,9 +190,9 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
                   <FaEye onClick={this.togglePasswordVisibility} className="eye-icon" title="Show password" />
                 )}
                  {error && <p>*{error}</p>}
-              </div>
-              <div className = 'register-form'>
-                <button className="register-button" type="submit">Register</button>
+                 </div>
+                 <button className="register-button" type="submit">Generate Wallet</button>
+                 <p className = 'register-disclosure'>When you generate a wallet, a public/private key pair will be created. Your Wallet ID is your public key hash and your passphrase is used to encrypt your private key.</p>
               </div>
             </form>
           </div>
