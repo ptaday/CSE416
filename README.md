@@ -2,7 +2,7 @@
 
 **How to Run Code**
 
-1. `git clone -b Frontend-Irene https://github.com/ptaday/CSE416.git`
+1. `git clone https://github.com/ptaday/CSE416.git`
 2. `cd my-electron-app`
 3. `npm install`
 4. `npm install react-icons`
