@@ -1,19 +1,18 @@
 import React from 'react';
-import { FaSearch, FaUpload, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
+import { FaSearch, FaUpload, FaShareAlt, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
 
-interface CloudDriveProps {
+interface FileShareProps {
     isDarkTheme: boolean;
 }
 
 interface FileItem {
     name: string;
     trashed: boolean;
-    searchTerm: string;
     fileData?: Blob;
-    size: number; // Added size field
+    price: number | null; // Allow price to be null
 }
 
-interface CloudDriveState {
+interface FileShareState {
     searchTerm: string;
     filterDate: string | null;
     files: Array<FileItem>;
@@ -21,12 +20,13 @@ interface CloudDriveState {
     isDragOver: boolean;
     editingFile: FileItem | null; // Track the file being edited
     newName: string; // New name input
+    newPrice: number | null; // New price input
 }
 
-export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState> {
+export class FileShare extends React.Component<FileShareProps, FileShareState> {
     private fileInputRef: React.RefObject<HTMLInputElement>;
 
-    constructor(props: CloudDriveProps) {
+    constructor(props: FileShareProps) {
         super(props);
         this.state = {
             searchTerm: '',
@@ -35,7 +35,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
             showTrash: false,
             isDragOver: false,
             editingFile: null,
-            newName: '', // New name input
+            newName: '',
+            newPrice: null,
         };
 
         this.fileInputRef = React.createRef();
@@ -45,13 +46,13 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.triggerFileInputClick = this.triggerFileInputClick.bind(this);
         this.handleTrashFile = this.handleTrashFile.bind(this);
+        this.handleShareFile = this.handleShareFile.bind(this);
         this.handleDownloadFile = this.handleDownloadFile.bind(this);
         this.toggleShowTrash = this.toggleShowTrash.bind(this);
         this.deleteFileForever = this.deleteFileForever.bind(this);
         this.startEditing = this.startEditing.bind(this);
         this.handleEditChange = this.handleEditChange.bind(this);
         this.saveChanges = this.saveChanges.bind(this);
-
         this.handleDragOver = this.handleDragOver.bind(this);
         this.handleDragEnter = this.handleDragEnter.bind(this);
         this.handleDragLeave = this.handleDragLeave.bind(this);
@@ -85,9 +86,8 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
             const uploadedFiles = Array.from(files).map(file => ({
                 name: file.name,
                 trashed: false,
-                searchTerm: file.name.toLowerCase(),
                 fileData: new Blob([file], { type: file.type }),
-                size: file.size, // Set size from File object
+                price: null, // Initialize price as null
             }));
             this.setState(prevState => ({
                 files: [...prevState.files, ...uploadedFiles],
@@ -108,6 +108,10 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                 file.name === fileName ? { ...file, trashed: !file.trashed } : file
             ),
         }));
+    }
+
+    handleShareFile(fileName: string) {
+        console.log(`Sharing file: ${fileName}`);
     }
 
     handleDownloadFile(fileName: string) {
@@ -148,25 +152,31 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
     }
 
     startEditing(file: FileItem) {
-        this.setState({ editingFile: file, newName: file.name });
+        this.setState({ editingFile: file, newName: file.name, newPrice: file.price });
     }
 
-    handleEditChange(event: React.ChangeEvent<HTMLInputElement>) {
-        this.setState({ newName: event.target.value });
+    handleEditChange(event: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'price') {
+        if (field === 'name') {
+            this.setState({ newName: event.target.value });
+        } else if (field === 'price') {
+            const priceValue = parseFloat(event.target.value);
+            this.setState({ newPrice: isNaN(priceValue) ? null : priceValue });
+        }
     }
 
     saveChanges() {
-        const { editingFile, newName } = this.state;
+        const { editingFile, newName, newPrice } = this.state;
 
         if (editingFile) {
             this.setState(prevState => ({
                 files: prevState.files.map(file =>
                     file.name === editingFile.name
-                        ? { ...file, name: newName }
+                        ? { ...file, name: newName, price: newPrice }
                         : file
                 ),
                 editingFile: null, // Clear editing state
                 newName: '', // Reset new name input
+                newPrice: null, // Reset new price input
             }));
         }
     }
@@ -174,8 +184,7 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
     getFilteredFiles() {
         const { searchTerm, files, showTrash } = this.state;
         return files.filter(file =>
-            file.trashed === showTrash && 
-            file.name.toLowerCase().includes(searchTerm.toLowerCase()) // Match against the name
+            file.trashed === showTrash && file.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }
 
@@ -204,11 +213,11 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
     render() {
         const filteredFiles = this.getFilteredFiles();
         const { isDarkTheme } = this.props;  
-        const { isDragOver, showTrash, editingFile, newName } = this.state;
+        const { isDragOver, showTrash, editingFile, newName, newPrice } = this.state;
 
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
-                <h3>Cloud Drive</h3>
+                <h3>File Share</h3>
                 <div className="search-bar">
                     <input
                         type="text"
@@ -252,31 +261,26 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                         <input
                                             type="text"
                                             value={newName}
-                                            onChange={this.handleEditChange}
+                                            onChange={(e) => this.handleEditChange(e, 'name')}
+                                        />
+                                        <input
+                                            type="number"
+                                            value={newPrice !== null ? newPrice : ''}
+                                            onChange={(e) => this.handleEditChange(e, 'price')}
+                                            placeholder="Price (optional)"
                                         />
                                         <button onClick={this.saveChanges}>Save</button>
                                     </div>
                                 ) : (
                                     <>
-                                        <span>{file.name} - Size: {file.size} bytes</span>
+                                        <span>{file.name} - Price: {file.price !== null ? file.price.toFixed(2) : 0} BTC </span>
                                         <div className="file-actions">
-                                            {!file.trashed && (
-                                                <button onClick={() => this.handleDownloadFile(file.name)}>
-                                                    <FaDownload /> Download
-                                                </button>
-                                            )}
-                                            {!file.trashed && (
-                                                <button onClick={() => this.startEditing(file)}>
-                                                    <FaEdit /> Edit
-                                                </button>
-                                            )}
-                                            <button onClick={() => this.handleTrashFile(file.name)}>
-                                                <FaTrash /> {file.trashed ? 'Restore' : 'Trash'}
-                                            </button>
+                                            {!file.trashed && (<button onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>)}
+                                            {!file.trashed && (<button onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>)}
+                                            {!file.trashed && (<button onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>)}
+                                            <button onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
                                             {file.trashed && (
-                                                <button onClick={() => this.deleteFileForever(file.name)}>
-                                                    <FaUndo /> Delete Forever
-                                                </button>
+                                                <button onClick={() => this.deleteFileForever(file.name)}><FaUndo /> Delete Forever</button>
                                             )}
                                         </div>
                                     </>

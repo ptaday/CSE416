@@ -1,0 +1,57 @@
+.cloud-drive-container {
+    padding: 20px;
+}
+
+.file-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 16px;
+}
+
+.file-card {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 10px;
+    text-align: center;
+    background-color: #fff;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+}
+
+.file-card:hover {
+    transform: scale(1.05);
+}
+
+.file-info {
+    margin: 10px 0;
+}
+
+.file-name {
+    font-weight: bold;
+}
+
+.file-size {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.file-actions {
+    display: flex;
+    justify-content: space-around;
+}
+
+.drag-over {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
+.edit-modal {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
+    background: white;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    z-index: 1000;
+}
