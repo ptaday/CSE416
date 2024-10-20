@@ -11,7 +11,7 @@ interface FileItem {
     price: number | null;
     dateUploaded: Date;
     hashCode: string;
-    provider: string; // Added provider field
+    provider: string;
 }
 
 interface DownloadHistoryItem {
@@ -25,6 +25,7 @@ interface RequestFileState {
     searchTerm: string;
     files: Array<FileItem>;
     downloadHistory: Array<DownloadHistoryItem>;
+    isLoading: boolean; // New loading state
 }
 
 export class RequestFile extends React.Component<RequestFileProps, RequestFileState> {
@@ -38,7 +39,8 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                 { name: 'presentation.ppt', price: 0.005, dateUploaded: new Date('2023-08-15'), hashCode: 'ghi789', provider: 'Provider A' },
                 { name: 'music.mp3', price: 0.003, dateUploaded: new Date('2023-07-10'), hashCode: 'jkl012', provider: 'Provider C' }
             ],
-            downloadHistory: [], // Initialize empty download history
+            downloadHistory: [],
+            isLoading: false, // Initialize loading state
         };
 
         this.handleSearchChange = this.handleSearchChange.bind(this);
@@ -49,21 +51,28 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
         this.setState({ searchTerm: event.target.value });
     }
 
-    handleDownloadFile(fileName: string) {
+    async handleDownloadFile(fileName: string) {
         const file = this.state.files.find(file => file.name === fileName);
         if (file) {
             const userConfirmed = window.confirm(`Are you sure you want to download "${file.name}" at the rate of ${file.price !== null ? file.price.toFixed(8) : 'N/A'} BTC?`);
             if (userConfirmed) {
+                // Set loading to true before starting the download process
+                this.setState({ isLoading: true });
+
                 const newDownloadHistoryItem: DownloadHistoryItem = {
-                    provider: file.provider, // Include the provider from the file
+                    provider: file.provider,
                     name: file.name,
                     price: file.price,
                     hashCode: file.hashCode
                 };
 
-                // Immediately update state with the new download history item
+                // Simulate a delay for the file download (replace with actual file download logic)
+                await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate a 2-second delay
+
+                // Add the file to download history
                 this.setState(prevState => ({
-                    downloadHistory: [...prevState.downloadHistory, newDownloadHistoryItem]
+                    downloadHistory: [...prevState.downloadHistory, newDownloadHistoryItem],
+                    isLoading: false // Set loading back to false after download completes
                 }));
 
                 // Simulate file download
@@ -73,7 +82,7 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
 
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = file.name; // Suggest a name for the downloaded file
+                link.download = file.name;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -87,14 +96,14 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
 
         return files.filter(file =>
             file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            file.hashCode.toLowerCase().includes(searchTerm.toLowerCase()) // Added hashCode search
+            file.hashCode.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }
 
     render() {
         const filteredFiles = this.getFilteredFiles();
         const { isDarkTheme } = this.props;
-        const { downloadHistory } = this.state;
+        const { downloadHistory, isLoading } = this.state;
 
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
@@ -109,13 +118,16 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                     <FaSearch />
                 </div>
 
+                {/* Loading Indicator */}
+                {isLoading && <div className="loading-indicator">Downloading, please wait...</div>}
+
                 {/* File List */}
                 <div className={`file-list`}>
                     <table>
                         <thead>
                             <tr>
                                 <th>Name</th>
-                                <th>Provider</th> {/* Added Provider column */}
+                                <th>Provider</th>
                                 <th>Price (BTC)</th>
                                 <th>Date Uploaded</th>
                                 <th>Hash Code</th>
@@ -127,12 +139,12 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                                 filteredFiles.map((file, index) => (
                                     <tr key={index}>
                                         <td>{file.name}</td>
-                                        <td>{file.provider}</td> {/* Displaying provider */}
+                                        <td>{file.provider}</td>
                                         <td>{file.price !== null ? file.price.toFixed(8) : 'N/A'}</td>
                                         <td>{file.dateUploaded.toDateString()}</td>
                                         <td>{file.hashCode}</td>
                                         <td>
-                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}>
+                                            <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)} disabled={isLoading}>
                                                 <FaDownload /> Download
                                             </button>
                                         </td>
