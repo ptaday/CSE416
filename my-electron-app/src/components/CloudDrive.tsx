@@ -2,6 +2,7 @@ import React from 'react';
 import { FaSearch, FaUpload, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
 import '../CloudDrive.css';
 
+
 interface CloudDriveProps {
     isDarkTheme: boolean;
 }
@@ -210,11 +211,11 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                 </div>
     
                 <div className="action-buttons filter-buttons">
-                    <button onClick={() => this.handleDateFilter('today')}>Today</button>
-                    <button onClick={() => this.handleDateFilter('this-week')}>This Week</button>
-                    <button onClick={() => this.handleDateFilter('this-month')}>This Month</button>
-                    <button onClick={this.triggerFileInputClick}><FaUpload /> Upload</button>
-                    <button onClick={this.toggleShowTrash}>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}><FaUpload /> Upload</button>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
                         {showTrash ? 'Show Active Files' : 'Show Trash'}
                     </button>
                 </div>
@@ -275,9 +276,9 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                                 <td>{file.name}</td>
                                                 <td>{file.dateUploaded.toDateString()}</td>
                                                 <td>
-                                                    <button onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
-                                                    <button onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
-                                                    <button onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
                                                     {file.trashed && (
                                                         <button onClick={() => this.deleteFileForever(file.name)}><FaTrash /> Delete Forever</button>
                                                     )}

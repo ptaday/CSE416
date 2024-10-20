@@ -204,7 +204,7 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
                     <FaSearch />
                 </div>
                 <div className="upload-area" onDragOver={this.handleDragOver} onDragLeave={this.handleDragLeave} onDrop={this.handleDrop}>
-                    <button onClick={this.triggerFileInputClick}>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
                         <FaUpload /> Upload
                     </button>
                     <input
@@ -263,9 +263,9 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
                                                 <td>{file.price !== null ? file.price.toFixed(8) : 'N/A'}</td>
                                                 <td>{file.dateUploaded.toDateString()}</td>
                                                 <td>
-                                                    <button onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
-                                                    <button onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
-                                                    <button onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>
                                                 </td>
                                             </>
                                         )}
