@@ -9,5 +9,5 @@
 5. `npm install typescript --save-dev`
 6. `npm install electron --save-dev`
 7. `npm run dev`
-8. Open new terminal
+8. Open split terminal
 9. ` npm run electron`
