@@ -123,7 +123,7 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
     };
 
     render() {
-      const { passphrase, publicKey, username, error, showPassword, showPopup, encryptedPrivateKey } = this.state;
+      const { passphrase, publicKey, username, error, showPassword, showPopup } = this.state;
   
       if (publicKey) {
         return (
@@ -134,15 +134,6 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
               <textarea className="register-successful-input" readOnly value={username}></textarea>
               <FaRegCopy
                 onClick={() => this.copyToClipboard(username)}
-                style={{ cursor: 'pointer', marginLeft: '10px', fontSize: '1.5em' }}
-                title="Copy to clipboard"
-              />
-            </div>
-            <div className="register-successful-row">
-              <label className="register-successful-label">Private Key</label>
-              <textarea className="register-successful-input" readOnly value={encryptedPrivateKey}></textarea>
-              <FaRegCopy
-                onClick={() => this.copyToClipboard(encryptedPrivateKey)}
                 style={{ cursor: 'pointer', marginLeft: '10px', fontSize: '1.5em' }}
                 title="Copy to clipboard"
               />
@@ -180,7 +171,6 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
                   type={showPassword ? 'text' : 'password'}
                   value={passphrase}
                   onChange={this.handlePassphraseChange}
-                pattern="(?=.*[A-Z])(?=.*[0-9])(?=.*[!@#$%^&*])(?=.{14,})" 
                 title="Must be at least 14 characters, include an uppercase letter, a number, and a special character"
                 required
                 />
