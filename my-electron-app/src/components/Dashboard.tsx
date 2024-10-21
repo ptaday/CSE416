@@ -198,7 +198,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                         className={`menu-button ${this.state.togglePeers ? 'active' : 'inactive'}`}
                         onClick={this.togglePeers}
                     >
-                        Peers
+                        Proxy
                     </button>
                     <button
                         id="fileShare"
