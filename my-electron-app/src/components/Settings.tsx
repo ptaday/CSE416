@@ -79,13 +79,13 @@ export class Settings extends React.Component<SettingsProps, SettingsState> {
                         <h3>Themes</h3>
                         <div className="theme-icons">
                             <LuSun
-                                size={24} 
+                                size={10} 
                                 className={`theme-icon ${isDarkTheme ? 'inactive-theme' : 'active-theme'}`}
                                 onClick={this.toggleLightTheme} 
                                 style={{ cursor: 'pointer' }} 
                             />
                             <FaMoon 
-                                size={20} 
+                                size={10} 
                                 className={`theme-icon ${isDarkTheme ? 'active-theme' : 'inactive-theme'}`}
                                 onClick={this.toggleDarkTheme} 
                                 style={{ cursor: 'pointer' }} 
