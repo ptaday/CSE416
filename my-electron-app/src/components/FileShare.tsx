@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { FaSearch, FaUpload, FaShareAlt, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
 import '../CloudDrive.css';
@@ -21,6 +22,9 @@ interface FileShareState {
     newName: string;
     newPrice: number | null;
     newDate: Date | null;
+    showConfirmPopup: boolean;
+    popupAction: 'upload' | 'share' | null; // Action to confirm
+    inputPrice: number | null; // Price input from user
 }
 
 export class FileShare extends React.Component<FileShareProps, FileShareState> {
@@ -36,10 +40,14 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
             newName: '',
             newPrice: null,
             newDate: null,
+            showConfirmPopup: false,
+            popupAction: null,
+            inputPrice: null, // Initialize price input
         };
 
         this.fileInputRef = React.createRef();
 
+        // Binding methods
         this.handleSearchChange = this.handleSearchChange.bind(this);
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.triggerFileInputClick = this.triggerFileInputClick.bind(this);
@@ -51,6 +59,9 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
         this.handleDragOver = this.handleDragOver.bind(this);
         this.handleDragLeave = this.handleDragLeave.bind(this);
         this.handleDrop = this.handleDrop.bind(this);
+        this.toggleConfirmPopup = this.toggleConfirmPopup.bind(this);
+        this.confirmAction = this.confirmAction.bind(this);
+        this.handlePriceChange = this.handlePriceChange.bind(this);
     }
 
     handleSearchChange(event: React.ChangeEvent<HTMLInputElement>) {
@@ -59,60 +70,29 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
 
     handleFileUpload(files: FileList | null) {
         if (files && files.length > 0) {
-            // Prompt for price
-            const priceInput = prompt("Enter a price for the uploaded file (BTC):");
-            const price = priceInput ? parseFloat(priceInput) : null;
-
-            // Check if the price is valid
-            if (price !== null && (isNaN(price) || price < 0)) {
-                alert("Please enter a valid price.");
-                return;
-            }
-
-            const uploadedFiles = Array.from(files).map(file => ({
+            const newFiles = Array.from(files).map(file => ({
                 name: file.name,
-                fileData: new Blob([file], { type: file.type }),
-                price: price,
-                dateUploaded: new Date(),
+                fileData: file,
+                price: null,
+                dateUploaded: new Date(), // Set current date
             }));
-
             this.setState(prevState => ({
-                files: [...prevState.files, ...uploadedFiles],
-                isDragOver: false,
+                files: [...prevState.files, ...newFiles], // Add new files to the existing list
             }));
-        }
-    }
-
-    triggerFileInputClick() {
-        if (this.fileInputRef.current) {
-            this.fileInputRef.current.click();
+            this.toggleConfirmPopup('upload'); // Open the confirmation popup
         }
     }
 
     handleShareFile(fileName: string) {
         const fileIndex = this.state.files.findIndex(file => file.name === fileName);
         if (fileIndex !== -1) {
-            const priceInput = prompt("Enter a price for sharing this file (BTC):");
-            const price = priceInput ? parseFloat(priceInput) : null;
+            this.toggleConfirmPopup('share'); // Open the confirmation popup
+        }
+    }
 
-            // Check if the price is valid
-            if (price !== null && (isNaN(price) || price < 0)) {
-                alert("Please enter a valid price.");
-                return;
-            }
-
-            // Update the file's price in the state
-            this.setState(prevState => {
-                const updatedFiles = [...prevState.files];
-                updatedFiles[fileIndex] = {
-                    ...updatedFiles[fileIndex],
-                    price: price,
-                };
-                return { files: updatedFiles };
-            });
-
-            console.log(`Updated price for sharing file: ${fileName} to ${price !== null ? price.toFixed(8) : 'N/A'}`);
-            // Add your sharing logic here (e.g., API call, etc.)
+    triggerFileInputClick() {
+        if (this.fileInputRef.current) {
+            this.fileInputRef.current.click();
         }
     }
 
@@ -162,6 +142,45 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
         }
     }
 
+    handlePriceChange(event: React.ChangeEvent<HTMLInputElement>) {
+        const priceValue = parseFloat(event.target.value);
+        this.setState({ inputPrice: isNaN(priceValue) ? null : priceValue });
+    }
+
+    toggleConfirmPopup(action: 'upload' | 'share' | null) {
+        this.setState({
+            showConfirmPopup: !this.state.showConfirmPopup,
+            popupAction: action,
+            inputPrice: null, // Reset price input
+        });
+    }
+
+    confirmAction() {
+        const { popupAction, inputPrice } = this.state;
+
+        if (popupAction === 'upload') {
+            // alert(`File uploaded with price: ${inputPrice !== null ? inputPrice.toFixed(8) : 'N/A'}`);
+            // Optionally update the price in the state if needed
+            this.setState(prevState => {
+                const newFiles = prevState.files.map(file => ({
+                    ...file,
+                    price: inputPrice // Set uploaded price for each file or modify as needed
+                }));
+                return { files: newFiles };
+            });
+        } else if (popupAction === 'share') {
+            const fileIndex = this.state.files.findIndex(file => file.name === this.state.editingFile?.name);
+            if (fileIndex !== -1) {
+                const updatedFiles = [...this.state.files];
+                updatedFiles[fileIndex].price = inputPrice; // Update the price
+                this.setState({ files: updatedFiles });
+            }
+            alert(`File shared with price: ${inputPrice !== null ? inputPrice.toFixed(8) : 'N/A'}`);
+        }
+
+        this.toggleConfirmPopup(null); // Close the popup
+    }
+
     getFilteredFiles() {
         const { searchTerm, files } = this.state;
 
@@ -189,7 +208,7 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
     render() {
         const filteredFiles = this.getFilteredFiles();
         const { isDarkTheme } = this.props;
-        const { isDragOver, editingFile, newName, newPrice, newDate } = this.state;
+        const { isDragOver, editingFile, newName, newPrice, newDate, showConfirmPopup, inputPrice } = this.state;
 
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
@@ -253,19 +272,27 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
                                                     />
                                                 </td>
                                                 <td>
-                                                    <button onClick={this.saveChanges}><FaUndo /> Save</button>
-                                                    <button onClick={() => this.setState({ editingFile: null })}><FaUndo /> Cancel</button>
+                                                    <button onClick={this.saveChanges}>Save</button>
+                                                    <button onClick={() => this.setState({ editingFile: null })}>
+                                                        <FaUndo /> Cancel
+                                                    </button>
                                                 </td>
                                             </>
                                         ) : (
                                             <>
                                                 <td>{file.name}</td>
                                                 <td>{file.price !== null ? file.price.toFixed(8) : 'N/A'}</td>
-                                                <td>{file.dateUploaded.toDateString()}</td>
+                                                <td>{file.dateUploaded.toLocaleDateString()}</td>
                                                 <td>
-                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
-                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
-                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>
+                                                    <button onClick={() => this.handleShareFile(file.name)}>
+                                                        <FaShareAlt /> Share
+                                                    </button>
+                                                    <button onClick={() => this.startEditing(file)}>
+                                                        <FaEdit /> Edit
+                                                    </button>
+                                                    <button onClick={() => this.handleDownloadFile(file.name)}>
+                                                        <FaDownload /> Download
+                                                    </button>
                                                 </td>
                                             </>
                                         )}
@@ -279,6 +306,23 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
                         </tbody>
                     </table>
                 </div>
+
+                {showConfirmPopup && (
+                    <div className="popup-overlay">
+                        <div className="popup">
+                            <h2>{this.state.popupAction === 'upload' ? 'Enter Price for Upload' : 'Enter Price for Share'}</h2>
+                            <p>Please enter the price (BTC):</p>
+                            <input
+                                type="number"
+                                value={inputPrice !== null ? inputPrice : ''}
+                                onChange={this.handlePriceChange}
+                                placeholder="Enter price"
+                            />
+                            <button onClick={this.confirmAction}>Confirm</button>
+                            <button onClick={() => this.toggleConfirmPopup(null)}>Cancel</button>
+                        </div>
+                    </div>
+                )}
             </div>
         );
     }

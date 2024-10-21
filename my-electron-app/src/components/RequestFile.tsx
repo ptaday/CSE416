@@ -35,7 +35,7 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
             searchTerm: '',
             files: [
                 { name: 'file1.txt', price: 0.001, dateUploaded: new Date('2023-10-01'), hashCode: 'abc123', provider: 'Provider A' },
-                { name: 'file2.jpg', price: 0.002, dateUploaded: new Date('2023-09-20'), hashCode: 'abc123', provider: 'Provider B' }, // Same hash as file1.txt
+                { name: 'file2.txt', price: 0.002, dateUploaded: new Date('2023-09-20'), hashCode: 'abc123', provider: 'Provider B' }, // Same hash as file1.txt
                 { name: 'presentation.ppt', price: 0.005, dateUploaded: new Date('2023-08-15'), hashCode: 'ghi789', provider: 'Provider A' },
                 { name: 'music.mp3', price: 0.003, dateUploaded: new Date('2023-07-10'), hashCode: 'jkl012', provider: 'Provider C' }
             ],
@@ -90,20 +90,43 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
     getFilteredFiles() {
         const { searchTerm, files } = this.state;
 
-        let matchingHashCode: string | null = null;
+        // Normalize the search term for case-insensitive search
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
 
-        const matchingFileByName = files.find(file => 
-            file.name.toLowerCase().includes(searchTerm.toLowerCase())
+        // Step 1: Find files that match by name
+        const matchingFilesByName = files.filter(file =>
+            file.name.toLowerCase().includes(lowerCaseSearchTerm)
         );
 
-        if (matchingFileByName) {
-            matchingHashCode = matchingFileByName.hashCode;
-        }
+        // Step 2: Collect hash codes of matched files
+        const matchingHashCodes = new Set<string>();
+        matchingFilesByName.forEach(file => {
+            matchingHashCodes.add(file.hashCode);
+        });
 
-        return files.filter(file =>
-            file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            (matchingHashCode && file.hashCode === matchingHashCode)
+        // Step 3: Find files that match by hash code (including different names)
+        const matchingFilesByHash = files.filter(file =>
+            file.hashCode.toLowerCase().includes(lowerCaseSearchTerm) && !matchingFilesByName.includes(file)
         );
+
+        // Step 4: Combine the results, including files with the same hash
+        const combinedFiles = [...matchingFilesByName];
+
+        // Include files that share the same hash code with matched files
+        files.forEach(file => {
+            if (matchingHashCodes.has(file.hashCode) && !combinedFiles.includes(file)) {
+                combinedFiles.push(file);
+            }
+        });
+
+        // Also include files that matched the hash search
+        matchingFilesByHash.forEach(file => {
+            if (!combinedFiles.includes(file)) {
+                combinedFiles.push(file);
+            }
+        });
+
+        return combinedFiles;
     }
 
     render() {
