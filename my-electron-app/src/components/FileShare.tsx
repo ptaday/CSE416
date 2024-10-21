@@ -1,56 +1,50 @@
 import React from 'react';
-import { FaSearch, FaUpload, FaTrash, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
+import { FaSearch, FaUpload, FaShareAlt, FaDownload, FaEdit, FaUndo } from 'react-icons/fa';
 import '../CloudDrive.css';
 
-
-interface CloudDriveProps {
+interface FileShareProps {
     isDarkTheme: boolean;
 }
 
 interface FileItem {
     name: string;
-    trashed: boolean;
     fileData?: Blob;
-    dateUploaded: Date; 
+    price: number | null;
+    dateUploaded: Date;
 }
 
-interface CloudDriveState {
+interface FileShareState {
     searchTerm: string;
-    filterDate: string | null;
     files: Array<FileItem>;
-    showTrash: boolean;
     isDragOver: boolean;
     editingFile: FileItem | null;
     newName: string;
-    newDate: Date | null; 
+    newPrice: number | null;
+    newDate: Date | null;
 }
 
-export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState> {
+export class FileShare extends React.Component<FileShareProps, FileShareState> {
     private fileInputRef: React.RefObject<HTMLInputElement>;
 
-    constructor(props: CloudDriveProps) {
+    constructor(props: FileShareProps) {
         super(props);
         this.state = {
             searchTerm: '',
-            filterDate: null,
             files: [],
-            showTrash: false,
             isDragOver: false,
             editingFile: null,
             newName: '',
-            newDate: null, 
+            newPrice: null,
+            newDate: null,
         };
 
         this.fileInputRef = React.createRef();
 
         this.handleSearchChange = this.handleSearchChange.bind(this);
-        this.handleDateFilter = this.handleDateFilter.bind(this);
         this.handleFileUpload = this.handleFileUpload.bind(this);
         this.triggerFileInputClick = this.triggerFileInputClick.bind(this);
-        this.handleTrashFile = this.handleTrashFile.bind(this);
+        this.handleShareFile = this.handleShareFile.bind(this);
         this.handleDownloadFile = this.handleDownloadFile.bind(this);
-        this.toggleShowTrash = this.toggleShowTrash.bind(this);
-        this.deleteFileForever = this.deleteFileForever.bind(this);
         this.startEditing = this.startEditing.bind(this);
         this.handleEditChange = this.handleEditChange.bind(this);
         this.saveChanges = this.saveChanges.bind(this);
@@ -63,18 +57,25 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         this.setState({ searchTerm: event.target.value });
     }
 
-    handleDateFilter(dateRange: string) {
-        this.setState({ filterDate: dateRange });
-    }
-
     handleFileUpload(files: FileList | null) {
         if (files && files.length > 0) {
+            // Prompt for price
+            const priceInput = prompt("Enter a price for the uploaded file (BTC):");
+            const price = priceInput ? parseFloat(priceInput) : null;
+
+            // Check if the price is valid
+            if (price !== null && (isNaN(price) || price < 0)) {
+                alert("Please enter a valid price.");
+                return;
+            }
+
             const uploadedFiles = Array.from(files).map(file => ({
                 name: file.name,
-                trashed: false,
                 fileData: new Blob([file], { type: file.type }),
+                price: price,
                 dateUploaded: new Date(),
             }));
+
             this.setState(prevState => ({
                 files: [...prevState.files, ...uploadedFiles],
                 isDragOver: false,
@@ -88,12 +89,31 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         }
     }
 
-    handleTrashFile(fileName: string) {
-        this.setState(prevState => ({
-            files: prevState.files.map(file =>
-                file.name === fileName ? { ...file, trashed: !file.trashed } : file
-            ),
-        }));
+    handleShareFile(fileName: string) {
+        const fileIndex = this.state.files.findIndex(file => file.name === fileName);
+        if (fileIndex !== -1) {
+            const priceInput = prompt("Enter a price for sharing this file (BTC):");
+            const price = priceInput ? parseFloat(priceInput) : null;
+
+            // Check if the price is valid
+            if (price !== null && (isNaN(price) || price < 0)) {
+                alert("Please enter a valid price.");
+                return;
+            }
+
+            // Update the file's price in the state
+            this.setState(prevState => {
+                const updatedFiles = [...prevState.files];
+                updatedFiles[fileIndex] = {
+                    ...updatedFiles[fileIndex],
+                    price: price,
+                };
+                return { files: updatedFiles };
+            });
+
+            console.log(`Updated price for sharing file: ${fileName} to ${price !== null ? price.toFixed(8) : 'N/A'}`);
+            // Add your sharing logic here (e.g., API call, etc.)
+        }
     }
 
     handleDownloadFile(fileName: string) {
@@ -110,67 +130,43 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
         }
     }
 
-    toggleShowTrash() {
-        this.setState(prevState => ({
-            showTrash: !prevState.showTrash,
-        }));
-    }
-
-    deleteFileForever(fileName: string) {
-        this.setState(prevState => ({
-            files: prevState.files.filter(file => file.name !== fileName),
-        }));
-    }
-
     startEditing(file: FileItem) {
-        this.setState({ editingFile: file, newName: file.name, newDate: file.dateUploaded });
+        this.setState({ editingFile: file, newName: file.name, newPrice: file.price, newDate: file.dateUploaded });
     }
 
-    handleEditChange(event: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'date') {
+    handleEditChange(event: React.ChangeEvent<HTMLInputElement>, field: 'name' | 'price' | 'date') {
         if (field === 'name') {
             this.setState({ newName: event.target.value });
+        } else if (field === 'price') {
+            const priceValue = parseFloat(event.target.value);
+            this.setState({ newPrice: isNaN(priceValue) ? null : priceValue });
         } else if (field === 'date') {
             this.setState({ newDate: new Date(event.target.value) });
         }
     }
 
     saveChanges() {
-        const { editingFile, newName, newDate } = this.state;
+        const { editingFile, newName, newPrice, newDate } = this.state;
         if (editingFile) {
             this.setState(prevState => ({
                 files: prevState.files.map(file =>
                     file.name === editingFile.name
-                        ? { ...file, name: newName, dateUploaded: newDate ?? file.dateUploaded }
+                        ? { ...file, name: newName, price: newPrice, dateUploaded: newDate ?? file.dateUploaded }
                         : file
                 ),
                 editingFile: null,
                 newName: '',
+                newPrice: null,
                 newDate: null,
             }));
         }
     }
 
     getFilteredFiles() {
-        const { searchTerm, filterDate, files, showTrash } = this.state;
-
-        const dateLimit = (fileDate: Date): boolean => {
-            const today = new Date();
-            if (filterDate === 'today') {
-                return fileDate.toDateString() === today.toDateString();
-            } else if (filterDate === 'this-week') {
-                const oneWeekAgo = new Date(today.setDate(today.getDate() - 7));
-                return fileDate >= oneWeekAgo;
-            } else if (filterDate === 'this-month') {
-                const oneMonthAgo = new Date(today.setMonth(today.getMonth() - 1));
-                return fileDate >= oneMonthAgo;
-            }
-            return true;
-        };
+        const { searchTerm, files } = this.state;
 
         return files.filter(file =>
-            file.trashed === showTrash &&
-            file.name.toLowerCase().includes(searchTerm.toLowerCase()) &&
-            dateLimit(file.dateUploaded)
+            file.name.toLowerCase().includes(searchTerm.toLowerCase())
         );
     }
 
@@ -185,21 +181,19 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
 
     handleDrop(event: React.DragEvent<HTMLDivElement>) {
         event.preventDefault();
-        const files = event.dataTransfer.files;
-        if (files && files.length > 0) {
-            this.handleFileUpload(files);
-        }
-        this.setState({ isDragOver: false }); // Reset after drop
+        this.setState({ isDragOver: false });
+        const files = event.dataTransfer?.files;
+        this.handleFileUpload(files);
     }
 
     render() {
         const filteredFiles = this.getFilteredFiles();
         const { isDarkTheme } = this.props;
-        const { isDragOver, showTrash, editingFile, newName, newDate } = this.state;
-    
+        const { isDragOver, editingFile, newName, newPrice, newDate } = this.state;
+
         return (
             <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
-                <h3>Cloud Drive</h3>
+                <h3>File Share</h3>
                 <div className="search-bar">
                     <input
                         type="text"
@@ -209,39 +203,24 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                     />
                     <FaSearch />
                 </div>
-    
-                <div className="action-buttons filter-buttons">
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('today')}>Today</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-week')}>This Week</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDateFilter('this-month')}>This Month</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}><FaUpload /> Upload</button>
-                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.toggleShowTrash}>
-                        {showTrash ? 'Show Active Files' : 'Show Trash'}
+                <div className="upload-area" onDragOver={this.handleDragOver} onDragLeave={this.handleDragLeave} onDrop={this.handleDrop}>
+                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={this.triggerFileInputClick}>
+                        <FaUpload /> Upload
                     </button>
+                    <input
+                        type="file"
+                        ref={this.fileInputRef}
+                        onChange={(e) => this.handleFileUpload(e.target.files)}
+                        style={{ display: 'none' }}
+                        multiple
+                    />
                 </div>
-    
-                <input
-                    type="file"
-                    ref={this.fileInputRef}
-                    style={{ display: 'none' }}
-                    onChange={(e) => this.handleFileUpload(e.target.files)}
-                    multiple
-                />
-    
-                <div
-                    className={`drop-area ${isDragOver ? 'drag-over' : ''}`}
-                    onDragOver={this.handleDragOver}
-                    onDragLeave={this.handleDragLeave}
-                    onDrop={this.handleDrop}
-                >
-                    <p>{showTrash ? 'Trashed files' : 'Drag and drop files here'}</p>
-                </div>
-    
                 <div className={`file-list ${isDragOver ? 'drag-over' : ''}`}>
-                    <table className="file-table">
+                    <table>
                         <thead>
                             <tr>
-                                <th>File Name</th>
+                                <th>Name</th>
+                                <th>Price (BTC)</th>
                                 <th>Date Uploaded</th>
                                 <th>Actions</th>
                             </tr>
@@ -250,7 +229,7 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                             {filteredFiles.length > 0 ? (
                                 filteredFiles.map((file, index) => (
                                     <tr key={index}>
-                                        {editingFile?.name === file.name ? (
+                                        {editingFile && editingFile.name === file.name ? (
                                             <>
                                                 <td>
                                                     <input
@@ -261,27 +240,32 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                                 </td>
                                                 <td>
                                                     <input
+                                                        type="text"
+                                                        value={newPrice !== null ? newPrice.toFixed(8) : ''}
+                                                        onChange={(e) => this.handleEditChange(e, 'price')}
+                                                    />
+                                                </td>
+                                                <td>
+                                                    <input
                                                         type="date"
                                                         value={newDate ? newDate.toISOString().split('T')[0] : ''}
                                                         onChange={(e) => this.handleEditChange(e, 'date')}
                                                     />
                                                 </td>
                                                 <td>
-                                                    <button onClick={this.saveChanges}><FaEdit /> Save</button>
+                                                    <button onClick={this.saveChanges}><FaUndo /> Save</button>
                                                     <button onClick={() => this.setState({ editingFile: null })}><FaUndo /> Cancel</button>
                                                 </td>
                                             </>
                                         ) : (
                                             <>
                                                 <td>{file.name}</td>
+                                                <td>{file.price !== null ? file.price.toFixed(8) : 'N/A'}</td>
                                                 <td>{file.dateUploaded.toDateString()}</td>
                                                 <td>
                                                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
                                                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
-                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
-                                                    {file.trashed && (
-                                                        <button onClick={() => this.deleteFileForever(file.name)}><FaTrash /> Delete Forever</button>
-                                                    )}
+                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleShareFile(file.name)}><FaShareAlt /> Share</button>
                                                 </td>
                                             </>
                                         )}
@@ -289,14 +273,13 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                 ))
                             ) : (
                                 <tr>
-                                    <td colSpan={3}>No files found.</td>
+                                    <td colSpan={4}>No files found.</td>
                                 </tr>
                             )}
                         </tbody>
                     </table>
-                </div> {/* End of table wrapper */}
+                </div>
             </div>
         );
     }
-    
 }

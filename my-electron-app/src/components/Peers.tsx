@@ -1,12 +1,19 @@
 import React, { useState } from 'react';
 import '../Peers.css';
 
-//Testing Purposes: Modify after Backend Setup
-interface FileData {
-  name: string;
+interface ProxyNode {
   ip: string;
   location: string;
   price: string;
+}
+
+interface HistoryEntry {
+  location: string;
+  timeStarted: string;
+  timeEnded?: string;
+  duration?: string;
+  ip?: string;
+  expanded: boolean;
 }
 
 interface PeersProps {
@@ -14,70 +21,232 @@ interface PeersProps {
 }
 
 export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
+  const [connectedProxy, setConnectedProxy] = useState<string | null>(null);
+  const [becomeProxy, setBecomeProxy] = useState(false); 
   const [searchTerm, setSearchTerm] = useState('');
-  const [uploadModalOpen, setUploadModalOpen] = useState(false);
+  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [confirmationPopup, setConfirmationPopup] = useState<null | ProxyNode>(null);
+  const [successPopup, setSuccessPopup] = useState(false);
+  const [connectionStartTime, setConnectionStartTime] = useState<Date | null>(null); 
 
-  const fileList: FileData[] = [
-    { name: 'Adventures of Shuai Mu', ip: '192.168.0.1', location: 'US', price: '0.0789 BC' },
-    { name: 'Adventures of Shuai Mu2', ip: '192.168.0.2', location: 'Canada', price: '0.0543 BC' },
-    { name: 'Adventures of Shuai Mu3', ip: '192.168.0.3', location: 'Germany', price: '0.0787 BC' },
-    { name: 'Adventures of Shuai Mu4', ip: '145.168.0.3', location: 'China', price: '0.0984 BC' },
+  const proxyList: ProxyNode[] = [
+    { ip: '211.2.123.1', location: 'London', price: '0.0456 BC' },
+    { ip: '145.51.100.2', location: 'Rio De Janeiro', price: '0.0398 BC' },
+    { ip: '178.1.2.3', location: 'Moscow', price: '0.0521 BC' },
+    { ip: '163.0.565.4', location: 'Hong Kong', price: '0.0482 BC' },
   ];
 
-  const filteredFiles = fileList.filter((file) =>
-    file.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredProxies = proxyList.filter((proxy) =>
+    proxy.location.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleUploadModalToggle = () => {
-    setUploadModalOpen(!uploadModalOpen);
+  const handleProxyClick = (proxy: ProxyNode) => {
+    if (becomeProxy) {
+      window.alert("You cannot connect to a proxy while you are acting as a proxy yourself.");
+      return; 
+    }
+
+    if (connectedProxy && connectionStartTime) {
+      const endTime = new Date();
+      const lastConnection = history[history.length - 1];
+
+      const durationMs = endTime.getTime() - connectionStartTime.getTime();
+      const durationMinutes = Math.floor(durationMs / 60000);
+
+      const updatedHistory = [...history];
+      updatedHistory[updatedHistory.length - 1] = {
+        ...lastConnection,
+        timeEnded: endTime.toLocaleString(),
+        duration: `${durationMinutes} minutes`,
+        expanded: false,
+      };
+
+      setHistory(updatedHistory);
+      setConnectionStartTime(null);
+    }
+
+    setConfirmationPopup(proxy);
+  };
+
+  const handleConfirmation = (confirm: boolean) => {
+    if (confirm && confirmationPopup) {
+      const startTime = new Date();
+      setConnectedProxy(confirmationPopup.ip);
+      setConnectionStartTime(startTime);
+      setHistory([
+        ...history,
+        {
+          location: confirmationPopup.location,
+          timeStarted: startTime.toLocaleString(), // Set the start time
+          expanded: false,
+          ip: confirmationPopup.ip,
+        },
+      ]);
+      setSuccessPopup(true);
+    }
+    setConfirmationPopup(null);
+  };
+
+  const handleSuccessClose = () => {
+    setSuccessPopup(false);
+  };
+
+  const handleDisconnect = () => {
+    if (connectedProxy && connectionStartTime) {
+      const endTime = new Date();
+      const lastConnection = history[history.length - 1];
+
+      const durationMs = endTime.getTime() - connectionStartTime.getTime();
+      const durationMinutes = Math.floor(durationMs / 60000);
+
+      const updatedHistory = [...history];
+      updatedHistory[updatedHistory.length - 1] = {
+        ...lastConnection,
+        timeEnded: endTime.toLocaleString(),
+        duration: `${durationMinutes} minutes`,
+        expanded: false,
+      };
+
+      setHistory(updatedHistory);
+      setConnectedProxy(null);
+      setConnectionStartTime(null); 
+    }
+  };
+
+  const toggleHistoryExpansion = (index: number) => {
+    const updatedHistory = history.map((entry, i) =>
+      i === index ? { ...entry, expanded: !entry.expanded } : entry
+    );
+    setHistory(updatedHistory);
   };
 
   return (
     <div className={`peers-container ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
-      <h3>File Sharing Proxy System</h3>
+      <h3>Proxy System</h3>
 
-      {/* Upload Button */}
-      <button className="upload-button" onClick={handleUploadModalToggle}>
-        Upload File </button>
+      <div className="proxy-system-overview">
+        <div className="proxy-status">
+          <p>Current Proxy: {connectedProxy || '(Not Connected)'}</p>
+        </div>
+        <div className="status-text">
+          <p>Status: {connectedProxy ? 'Connected' : 'Disconnected'}</p>
+        </div>
 
-      {/* Search Bar */}
-      <input type="text" className="search-bar" placeholder="Search for a file..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)}/>
+        {/* <div className="toggle-proxy">
+          {connectedProxy ? (
+            <button className="disconnect-button" onClick={handleDisconnect}>
+              Disconnect
+            </button>
+          ) : (
+            <button
+              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
+              onClick={() => setBecomeProxy(!becomeProxy)}
+            >
+              {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
+            </button>
+          )}
+        </div> */}
+        <div className="toggle-proxy">
+          {/* Display msg if the user is currently a proxy */}
+          {becomeProxy && (
+            <p style={{ color: 'red', fontWeight: 'bold' }}>
+              Note: You cannot connect to another proxy while being a proxy yourself.
+            </p>
+          )}
 
-      {/* Table with 3 columns */}
-      <table className="file-list-table">
-        <thead> <tr> <th>File Name</th> <th>IP & Location</th> <th>Price</th> </tr> </thead>
-        
+          {connectedProxy ? (
+            <button className="disconnect-button" onClick={handleDisconnect}>
+              Disconnect
+            </button>
+          ) : (
+            <button
+              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
+              onClick={() => setBecomeProxy(!becomeProxy)}
+            >
+              {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
+            </button>
+          )}
+        </div>
+
+
+      </div>
+
+      <input
+        type="text"
+        className="search-bar"
+        placeholder="Search by location..."
+        value={searchTerm}
+        onChange={(e) => setSearchTerm(e.target.value)}
+        disabled={becomeProxy} 
+      />
+
+      <table className={`proxy-list-table ${becomeProxy ? 'disabled' : ''}`}>
+        <thead>
+          <tr>
+            <th>IP Address</th>
+            <th>Location</th>
+            <th>Price Per MB</th>
+          </tr>
+        </thead>
         <tbody>
-          {filteredFiles.map((file, index) => (
-            <tr key={index}>
-              <td>{file.name}</td>
-              <td>{file.ip} / {file.location}</td>
-              <td>{file.price}</td>
+          {filteredProxies.map((proxy, index) => (
+            <tr key={index} onClick={() => handleProxyClick(proxy)}>
+              <td>{proxy.ip}</td>
+              <td>{proxy.location}</td>
+              <td>{proxy.price}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      {/* Modal for Uploading */}
-      {uploadModalOpen && (
+      <h4>Proxy History</h4>
+      <table className="history-table">
+        <thead>
+          <tr>
+            <th>Location</th>
+            <th>Time Started</th>
+            <th>Time Ended</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {history.map((entry, index) => (
+            <React.Fragment key={index}>
+              <tr onClick={() => toggleHistoryExpansion(index)}>
+                <td>{entry.location}</td>
+                <td>{entry.timeStarted}</td>
+                <td>{entry.timeEnded || 'Ongoing'}</td>
+                <td>{entry.expanded ? 'Hide Details' : 'Show Details'}</td>
+              </tr>
+              {entry.expanded && (
+                <tr className="expanded-row">
+                  <td colSpan={4}>
+                    <p>Duration: {entry.duration}</p>
+                    <p>IP: {entry.ip}</p>
+                  </td>
+                </tr>
+              )}
+            </React.Fragment>
+          ))}
+        </tbody>
+      </table>
+
+      {confirmationPopup && (
         <div className="modal">
           <div className="modal-content">
-            <h2>Upload File</h2>
-            <form>
-              <label>File Name:</label>
-              <input type="text" name="fileName" placeholder="Enter file name" />
+            <h2>Confirm Connection</h2>
+            <p>Do you want to connect to {confirmationPopup.location}?</p>
+            <button onClick={() => handleConfirmation(true)}>Yes</button>
+            <button onClick={() => handleConfirmation(false)}>No</button>
+          </div>
+        </div>
+      )}
 
-              <label>Set Price:</label>
-              <input type="text" name="price" placeholder="Enter price" />
-
-              <label>Available for Download:</label>
-              <input type="checkbox" name="isAvailable" />
-
-              <div className="modal-buttons">
-                <button type="submit">Upload</button>
-                <button type="button" onClick={handleUploadModalToggle}>Close</button>
-              </div>
-            </form>
+      {successPopup && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Connection Successful!</h2>
+            <button onClick={handleSuccessClose}>Close</button>
           </div>
         </div>
       )}

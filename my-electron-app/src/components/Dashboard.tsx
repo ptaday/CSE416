@@ -1,6 +1,7 @@
 import React from 'react';
 import { Peers } from './Peers';
 import { CloudDrive } from './CloudDrive';
+import { Explore } from './Explore';
 import { Transactions } from './Transactions';
 import { Wallet } from './Wallet';
 import { Settings } from './Settings';
@@ -14,6 +15,7 @@ interface DashboardState {
     toggleDrive: boolean;
     toggleWallet: boolean;
     toggleSettings: boolean;
+    toggleExplore: boolean;
     togglePeers: boolean;
     toggleLogout: boolean,
     showLogoutPopup: boolean;
@@ -34,6 +36,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
+            toggleExplore: false,
             togglePeers: false,
             toggleLogout: false,
             showLogoutPopup: false,
@@ -45,6 +48,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
         this.toggleWallet = this.toggleWallet.bind(this);
         this.toggleSettings = this.toggleSettings.bind(this);
         this.togglePeers = this.togglePeers.bind(this);
+        this.toggleExplore = this.toggleExplore.bind(this);
         this.toggleLogout = this.toggleLogout.bind(this); 
         this.toggleLogoutPopup = this.toggleLogoutPopup.bind(this);
         this.handleThemeChange = this.handleThemeChange.bind(this); 
@@ -56,6 +60,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
+            toggleExplore: false,
             togglePeers: true,
             toggleLogout: false,
         });
@@ -67,6 +72,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: true,
             toggleWallet: false,
             toggleSettings: false,
+            toggleExplore: false,
             togglePeers: false,
             toggleLogout: false,
         });
@@ -78,6 +84,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: false,
+            toggleExplore: false,
             togglePeers: false,
             toggleLogout: false,
         });
@@ -88,6 +95,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleTransactions: false,
             toggleDrive: false,
             toggleWallet: true,
+            toggleExplore: false,
             toggleSettings: false,
             togglePeers: false,
             toggleLogout: false,
@@ -100,6 +108,7 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleDrive: false,
             toggleWallet: false,
             toggleSettings: true,
+            toggleExplore: false,
             togglePeers: false,
             toggleLogout: false,
         });
@@ -110,10 +119,23 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
             toggleTransactions: false,
             toggleDrive: false,
             toggleWallet: false,
+            toggleExplore: false,
             toggleSettings: false,
             togglePeers: false,
             showLogoutPopup: false,
             toggleLogout: true,
+        });
+    }
+    toggleExplore() {
+        this.setState({
+            toggleTransactions: false,
+            toggleDrive: false,
+            toggleWallet: false,
+            toggleExplore: true,
+            toggleSettings: false,
+            togglePeers: false,
+            showLogoutPopup: false,
+            toggleLogout: false,
         });
     }
 
@@ -126,13 +148,16 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
     }
 
     renderContent() {
-        const { toggleTransactions, toggleDrive, toggleWallet, toggleSettings, togglePeers, isDarkTheme } = this.state;
+        const { toggleTransactions, toggleDrive, toggleWallet, toggleSettings, togglePeers, isDarkTheme, toggleExplore } = this.state;
 
         if (toggleTransactions) {
             return <Transactions isDarkTheme={isDarkTheme} walletBalance={this.props.walletBalance} />;
           } else if (toggleDrive) {
             return <CloudDrive isDarkTheme={isDarkTheme} />;
-          } else if (toggleWallet) {
+          }else if(toggleExplore){
+            return <Explore isDarkTheme={isDarkTheme} />;
+          }
+           else if (toggleWallet) {
             return <Wallet isDarkTheme={isDarkTheme} walletId={this.props.walletId} walletBalance={this.props.walletBalance} />; // Pass props to Wallet
           } else if (toggleSettings) {      
             return (
@@ -173,7 +198,14 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                         className={`menu-button ${this.state.togglePeers ? 'active' : 'inactive'}`}
                         onClick={this.togglePeers}
                     >
-                        Peers
+                        Proxy
+                    </button>
+                    <button
+                        id="fileShare"
+                        className={`menu-button ${this.state.toggleExplore ? 'active' : 'inactive'}`}
+                        onClick={this.toggleExplore}
+                    >
+                        Explore
                     </button>
                     <button
                         id="cloudDrive"
