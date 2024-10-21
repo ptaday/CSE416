@@ -25,7 +25,7 @@ interface RequestFileState {
     searchTerm: string;
     files: Array<FileItem>;
     downloadHistory: Array<DownloadHistoryItem>;
-    isLoading: boolean; // New loading state
+    isLoading: boolean;
 }
 
 export class RequestFile extends React.Component<RequestFileProps, RequestFileState> {
@@ -35,12 +35,12 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
             searchTerm: '',
             files: [
                 { name: 'file1.txt', price: 0.001, dateUploaded: new Date('2023-10-01'), hashCode: 'abc123', provider: 'Provider A' },
-                { name: 'file2.jpg', price: 0.002, dateUploaded: new Date('2023-09-20'), hashCode: 'def456', provider: 'Provider B' },
+                { name: 'file2.txt', price: 0.002, dateUploaded: new Date('2023-09-20'), hashCode: 'abc123', provider: 'Provider B' }, // Same hash as file1.txt
                 { name: 'presentation.ppt', price: 0.005, dateUploaded: new Date('2023-08-15'), hashCode: 'ghi789', provider: 'Provider A' },
                 { name: 'music.mp3', price: 0.003, dateUploaded: new Date('2023-07-10'), hashCode: 'jkl012', provider: 'Provider C' }
             ],
             downloadHistory: [],
-            isLoading: false, // Initialize loading state
+            isLoading: false,
         };
 
         this.handleSearchChange = this.handleSearchChange.bind(this);
@@ -56,7 +56,6 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
         if (file) {
             const userConfirmed = window.confirm(`Are you sure you want to download "${file.name}" at the rate of ${file.price !== null ? file.price.toFixed(8) : 'N/A'} BTC?`);
             if (userConfirmed) {
-                // Set loading to true before starting the download process
                 this.setState({ isLoading: true });
 
                 const newDownloadHistoryItem: DownloadHistoryItem = {
@@ -66,16 +65,13 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                     hashCode: file.hashCode
                 };
 
-                // Simulate a delay for the file download (replace with actual file download logic)
                 await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulate a 2-second delay
 
-                // Add the file to download history
                 this.setState(prevState => ({
                     downloadHistory: [...prevState.downloadHistory, newDownloadHistoryItem],
-                    isLoading: false // Set loading back to false after download completes
+                    isLoading: false
                 }));
 
-                // Simulate file download
                 const fileContent = `This is the content of the file: ${file.name}`;
                 const blob = new Blob([fileContent], { type: 'text/plain' });
                 const url = URL.createObjectURL(blob);
@@ -86,7 +82,7 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
-                URL.revokeObjectURL(url); // Clean up the object URL
+                URL.revokeObjectURL(url);
             }
         }
     }
@@ -94,10 +90,43 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
     getFilteredFiles() {
         const { searchTerm, files } = this.state;
 
-        return files.filter(file =>
-            file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            file.hashCode.toLowerCase().includes(searchTerm.toLowerCase())
+        // Normalize the search term for case-insensitive search
+        const lowerCaseSearchTerm = searchTerm.toLowerCase();
+
+        // Step 1: Find files that match by name
+        const matchingFilesByName = files.filter(file =>
+            file.name.toLowerCase().includes(lowerCaseSearchTerm)
         );
+
+        // Step 2: Collect hash codes of matched files
+        const matchingHashCodes = new Set<string>();
+        matchingFilesByName.forEach(file => {
+            matchingHashCodes.add(file.hashCode);
+        });
+
+        // Step 3: Find files that match by hash code (including different names)
+        const matchingFilesByHash = files.filter(file =>
+            file.hashCode.toLowerCase().includes(lowerCaseSearchTerm) && !matchingFilesByName.includes(file)
+        );
+
+        // Step 4: Combine the results, including files with the same hash
+        const combinedFiles = [...matchingFilesByName];
+
+        // Include files that share the same hash code with matched files
+        files.forEach(file => {
+            if (matchingHashCodes.has(file.hashCode) && !combinedFiles.includes(file)) {
+                combinedFiles.push(file);
+            }
+        });
+
+        // Also include files that matched the hash search
+        matchingFilesByHash.forEach(file => {
+            if (!combinedFiles.includes(file)) {
+                combinedFiles.push(file);
+            }
+        });
+
+        return combinedFiles;
     }
 
     render() {
@@ -118,10 +147,8 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                     <FaSearch />
                 </div>
 
-                {/* Loading Indicator */}
                 {isLoading && <div className="loading-indicator">Downloading, please wait...</div>}
 
-                {/* File List */}
                 <div className={`file-list`}>
                     <table>
                         <thead>
@@ -159,7 +186,6 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                     </table>
                 </div>
 
-                {/* Always show Download History table */}
                 <div className="download-history">
                     <h4>Download History</h4>
                     <table>

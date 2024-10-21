@@ -321,8 +321,9 @@ html, body {
   justify-content: center;
   align-items: center;
   color: var(--beluga-dark);
+  margin-top: 10px;
   width: 500px;
-  height: 200px;
+  height: 250px;
 }
 
 .register-button, .direct-login-button{
@@ -336,6 +337,7 @@ html, body {
   background-color: var(--beluga-dark); 
   color: var(--beluga-light);
   margin-top: 20px;
+  margin-bottom: 20px;
 }
 
 .register-button:hover, .direct-login-button:hover{
@@ -345,6 +347,10 @@ html, body {
 }
 
 .password-container{
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   font-family: 'Nunito', Arial, Helvetica, sans-serif; 
   margin-top: 10px;
 }
@@ -361,13 +367,25 @@ html, body {
   align-items: center;
 }
 
-.register-label, .register-successful-label{
+.register-disclosure{
+  font-size: 10px;
+  margin: 10px;
+  text-align: center;
+}
+
+.register-label{
+  display: inline-block;
+  margin-bottom: 10px;
+}
+
+.register-successful-label{
   display: inline-block;
   width: 100px;
   margin-bottom: 10px;
 }
 
 .register-input, .register-successful-input{
+  display: inline-block;
   width: 150px;
   height: 25px;
 }
@@ -382,7 +400,7 @@ html, body {
   align-items: center;
   color: var(--beluga-dark);
   width: 500px;
-  height: 200px;
+  height: 250px;
   margin: 0px;
 }
 
@@ -403,7 +421,7 @@ html, body {
   cursor: pointer;    
   background-color: var(--beluga-dark); 
   color: var(--beluga-light);
-  margin-top: 20px;
+  margin-top: 40px;
 }
 
 .login-button:hover {
