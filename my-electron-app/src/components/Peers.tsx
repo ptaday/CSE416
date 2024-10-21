@@ -22,12 +22,12 @@ interface PeersProps {
 
 export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
   const [connectedProxy, setConnectedProxy] = useState<string | null>(null);
-  const [becomeProxy, setBecomeProxy] = useState(false);
+  const [becomeProxy, setBecomeProxy] = useState(false); 
   const [searchTerm, setSearchTerm] = useState('');
   const [history, setHistory] = useState<HistoryEntry[]>([]);
   const [confirmationPopup, setConfirmationPopup] = useState<null | ProxyNode>(null);
   const [successPopup, setSuccessPopup] = useState(false);
-  const [connectionStartTime, setConnectionStartTime] = useState<Date | null>(null); // Track  start time
+  const [connectionStartTime, setConnectionStartTime] = useState<Date | null>(null); 
 
   const proxyList: ProxyNode[] = [
     { ip: '211.2.123.1', location: 'London', price: '0.0456 BC' },
@@ -41,7 +41,11 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
   );
 
   const handleProxyClick = (proxy: ProxyNode) => {
-    // If already connected, disconnect first and log the session
+    if (becomeProxy) {
+      window.alert("You cannot connect to a proxy while you are acting as a proxy yourself.");
+      return; 
+    }
+
     if (connectedProxy && connectionStartTime) {
       const endTime = new Date();
       const lastConnection = history[history.length - 1];
@@ -61,7 +65,6 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
       setConnectionStartTime(null);
     }
 
-    //prompt  connection to new proxy
     setConfirmationPopup(proxy);
   };
 
@@ -99,14 +102,14 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
         ...lastConnection,
-        timeEnded: endTime.toLocaleString(), 
+        timeEnded: endTime.toLocaleString(),
         duration: `${durationMinutes} minutes`,
         expanded: false,
       };
 
       setHistory(updatedHistory);
       setConnectedProxy(null);
-      setConnectionStartTime(null); // Reset connection start time
+      setConnectionStartTime(null); 
     }
   };
 
@@ -128,7 +131,29 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         <div className="status-text">
           <p>Status: {connectedProxy ? 'Connected' : 'Disconnected'}</p>
         </div>
+
+        {/* <div className="toggle-proxy">
+          {connectedProxy ? (
+            <button className="disconnect-button" onClick={handleDisconnect}>
+              Disconnect
+            </button>
+          ) : (
+            <button
+              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
+              onClick={() => setBecomeProxy(!becomeProxy)}
+            >
+              {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
+            </button>
+          )}
+        </div> */}
         <div className="toggle-proxy">
+          {/* Display msg if the user is currently a proxy */}
+          {becomeProxy && (
+            <p style={{ color: 'red', fontWeight: 'bold' }}>
+              Note: You cannot connect to another proxy while being a proxy yourself.
+            </p>
+          )}
+
           {connectedProxy ? (
             <button className="disconnect-button" onClick={handleDisconnect}>
               Disconnect
@@ -142,6 +167,8 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
             </button>
           )}
         </div>
+
+
       </div>
 
       <input
@@ -150,9 +177,10 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         placeholder="Search by location..."
         value={searchTerm}
         onChange={(e) => setSearchTerm(e.target.value)}
+        disabled={becomeProxy} 
       />
 
-      <table className="proxy-list-table">
+      <table className={`proxy-list-table ${becomeProxy ? 'disabled' : ''}`}>
         <thead>
           <tr>
             <th>IP Address</th>
