@@ -28,6 +28,8 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
   const [confirmationPopup, setConfirmationPopup] = useState<null | ProxyNode>(null);
   const [successPopup, setSuccessPopup] = useState(false);
   const [connectionStartTime, setConnectionStartTime] = useState<Date | null>(null); 
+  const [pricePerMB, setPricePerMB] = useState<string>('');
+  const [priceModalVisible, setPriceModalVisible] = useState(false); 
 
   const proxyList: ProxyNode[] = [
     { ip: '211.2.123.1', location: 'London', price: '0.0456 BC' },
@@ -77,7 +79,7 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         ...history,
         {
           location: confirmationPopup.location,
-          timeStarted: startTime.toLocaleString(), // Set the start time
+          timeStarted: startTime.toLocaleString(), 
           expanded: false,
           ip: confirmationPopup.ip,
         },
@@ -120,6 +122,23 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
     setHistory(updatedHistory);
   };
 
+  const handleBecomeProxyClick = () => {
+    if (becomeProxy) {
+      setBecomeProxy(false);
+    } else {
+      setPriceModalVisible(true);
+    }
+  };
+
+  const handleSetPrice = () => {
+    if (!pricePerMB) {
+      window.alert('Please set a valid price per MB.');
+      return;
+    }
+    setBecomeProxy(true);
+    setPriceModalVisible(false);
+  };
+
   return (
     <div className={`peers-container ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
       <h3>Proxy System</h3>
@@ -132,22 +151,7 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
           <p>Status: {connectedProxy ? 'Connected' : 'Disconnected'}</p>
         </div>
 
-        {/* <div className="toggle-proxy">
-          {connectedProxy ? (
-            <button className="disconnect-button" onClick={handleDisconnect}>
-              Disconnect
-            </button>
-          ) : (
-            <button
-              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
-              onClick={() => setBecomeProxy(!becomeProxy)}
-            >
-              {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
-            </button>
-          )}
-        </div> */}
         <div className="toggle-proxy">
-          {/* Display msg if the user is currently a proxy */}
           {becomeProxy && (
             <p style={{ color: 'red', fontWeight: 'bold' }}>
               Note: You cannot connect to another proxy while being a proxy yourself.
@@ -161,14 +165,12 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
           ) : (
             <button
               className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
-              onClick={() => setBecomeProxy(!becomeProxy)}
+              onClick={handleBecomeProxyClick} 
             >
               {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
             </button>
           )}
         </div>
-
-
       </div>
 
       <input
@@ -249,6 +251,22 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
             <button onClick={handleSuccessClose}>Close</button>
           </div>
         </div>
+      )}
+
+      {priceModalVisible && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Set Price Per MB</h2>
+            <input
+              type="number"
+              value={pricePerMB}
+              onChange={(e) => setPricePerMB(e.target.value)}
+              placeholder="Enter price in BC"
+            />
+            <button onClick={handleSetPrice}>Set Price</button>
+            <button onClick={() => setPriceModalVisible(false)}>Cancel</button>
+          </div>
+          </div>
       )}
     </div>
   );
