@@ -4,10 +4,7 @@
 
 1. `git clone https://github.com/ptaday/CSE416.git`
 2. `cd my-electron-app`
-3. `npm install`
-4. `npm install react-icons`
-5. `npm install typescript --save-dev`
-6. `npm install electron --save-dev`
-7. `npm run dev`
-8. Open new terminal
-9. ` npm run electron`
+3. `npm install react-icons typescript electron --save-dev`
+4. `npm run dev`
+5. Open spilt terminal
+6. ` npm run electron`
