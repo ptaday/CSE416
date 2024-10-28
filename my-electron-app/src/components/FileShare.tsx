@@ -211,8 +211,8 @@ export class FileShare extends React.Component<FileShareProps, FileShareState> {
         const { isDragOver, editingFile, newName, newPrice, newDate, showConfirmPopup, inputPrice } = this.state;
 
         return (
-            <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
-                <h3>File Share</h3>
+            <div className={`cloud-drive-internal-container ${isDarkTheme ? 'dark' : 'light'}`}>
+               <h3>File Share</h3>
                 <div className="search-bar">
                     <input
                         type="text"

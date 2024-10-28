@@ -147,6 +147,7 @@ export class Register extends React.Component<RegisterProps, RegisterState> {
                 title="Copy to clipboard"
               />
             </div>
+            <p className = 'register-disclosure'>Please copy and keep these credentials secure.</p>
             <button className="direct-login-button" onClick={this.directLogin}>
               Login
             </button>
