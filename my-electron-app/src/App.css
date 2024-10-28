@@ -292,11 +292,17 @@ html, body {
 .tab.active {
   background-color: var(--beluga-light); /* Active tab blue color */
   color: var(--beluga-dark);
+  border-style: solid;
+  border-width: 1px 1px 0px 1px;
+  border-color: var(--beluga-dark);
 }
 
-.tab:not(.active):hover {
+.tab.inactive:hover {
   background-color: var(--beluga-white); /* Hover effect for inactive tabs */
-  color: var(--beluga-dark)
+  color: var(--beluga-dark);
+  border-style: solid;
+  border-width: 1px 1px 0px 1px;
+  border-color: var(--beluga-light);
 }
 
 .form-container {
@@ -468,11 +474,17 @@ html, body {
 /* -------------------- CLOUD DRIVE -------------------- */
 /* #region */
 .cloud-drive-container {
-  margin-top: 30px;
   padding: 20px;
   border: 1px solid var(--beluga-dark);
   border-radius: 8px;
   background-color: var(--beluga-light); 
+}
+
+.cloud-drive-internal-container{
+  padding: 20px;
+  border-style: solid;
+  border-width: 1px;
+  border-radius: 0px 8px 8px 8px;
 }
 
 .dark-theme .cloud-drive-container {
@@ -505,6 +517,7 @@ html, body {
   display: flex;
   gap: 20px;
 }
+
 /* #endregion */
 
 /* -------------------- TRANSACTIONS -------------------- */
@@ -701,7 +714,9 @@ html, body {
 /* #endregion*/
 
 /* -------------------- SETTINGS -------------------- */
-/* #region */.light-theme .settings-container {
+/* #region */
+
+.light-theme .settings-container {
   display: flex; 
   margin-top: 30px;
   padding: 20px;
