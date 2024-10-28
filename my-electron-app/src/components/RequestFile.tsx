@@ -135,8 +135,8 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
         const { downloadHistory, isLoading } = this.state;
 
         return (
-            <div className={`cloud-drive-container ${isDarkTheme ? 'dark' : 'light'}`}>
-                <h3>Request File</h3>
+            <div className={`cloud-drive-internal-container ${isDarkTheme ? 'dark' : 'light'}`}>
+                <h3>File Request</h3>
                 <div className="search-bar">
                     <input
                         type="text"
@@ -150,9 +150,9 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                 {isLoading && <div className="loading-indicator">Downloading, please wait...</div>}
 
                 <div className={`file-list`}>
-                    <table>
-                        <thead>
-                            <tr>
+                    <table className = 'request-file-table'>
+                        <thead className = 'request-file-table'>
+                            <tr className = 'request-file-table'>
                                 <th>Name</th>
                                 <th>Provider</th>
                                 <th>Price (BTC)</th>
@@ -161,7 +161,7 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
                                 <th>Actions</th>
                             </tr>
                         </thead>
-                        <tbody>
+                        <tbody className = 'request-file-table'>
                             {filteredFiles.length > 0 ? (
                                 filteredFiles.map((file, index) => (
                                     <tr key={index}>
@@ -188,9 +188,9 @@ export class RequestFile extends React.Component<RequestFileProps, RequestFileSt
 
                 <div className="download-history">
                     <h4>Download History</h4>
-                    <table>
-                        <thead>
-                            <tr>
+                    <table className = 'request-file-table'>
+                        <thead className = 'request-file-table'>
+                            <tr className = 'request-file-table'>
                                 <th>Provider</th>
                                 <th>Filename</th>
                                 <th>Price (BTC)</th>

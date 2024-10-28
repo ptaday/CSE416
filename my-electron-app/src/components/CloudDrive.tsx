@@ -277,10 +277,12 @@ export class CloudDrive extends React.Component<CloudDriveProps, CloudDriveState
                                                 <td>{file.dateUploaded.toDateString()}</td>
                                                 <td>
                                                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.startEditing(file)}><FaEdit /> Edit</button>
-                                                    <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
+                                                    {!file.trashed && (
+                                                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleDownloadFile(file.name)}><FaDownload /> Download</button>
+                                                    )} 
                                                     <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.handleTrashFile(file.name)}><FaTrash /> {file.trashed ? 'Restore' : 'Trash'}</button>
                                                     {file.trashed && (
-                                                        <button onClick={() => this.deleteFileForever(file.name)}><FaTrash /> Delete Forever</button>
+                                                        <button className={`action-button ${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => this.deleteFileForever(file.name)}><FaTrash /> Delete Forever</button>
                                                     )}
                                                 </td>
                                             </>

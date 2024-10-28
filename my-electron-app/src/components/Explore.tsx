@@ -47,22 +47,23 @@ export class Explore extends React.Component<ExploreProps, ExploreState> {
 
   render() {
     const { toggleRequest, toggleShare } = this.state;
+    const {isDarkTheme} = this.props;
 
     return (
        
       
         <div className="cloud-drive-container">
              <div className="tab-container">
-          <div className={`tab ${toggleRequest ? 'active' : ''}`} onClick={this.toggleRequest}>
+          <div className={`tab ${toggleRequest ? 'active' : 'inactive'}`} onClick={this.toggleRequest}>
             File Request
           </div>
-          <div className={`tab ${toggleShare ? 'active' : ''}`} onClick={this.toggleShare} >
+          <div className={`tab ${toggleShare ? 'active' : 'inactive'}`} onClick={this.toggleShare} >
             File Share
           </div>
         </div>
           
-          {toggleShare && <FileShare isDarkTheme={true}/>}
-          {toggleRequest && <RequestFile isDarkTheme={true} />} {}
+          {toggleShare && <FileShare isDarkTheme={isDarkTheme}/>}
+          {toggleRequest && <RequestFile isDarkTheme={isDarkTheme} />} {}
         </div>
     );
   }
