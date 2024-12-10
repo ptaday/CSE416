@@ -1,5 +1,6 @@
 import React from 'react';
-import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight, FaRegCopy,FaHammer } from 'react-icons/fa';
+import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight, FaRegCopy } from 'react-icons/fa';
+import { GiWarPick } from "react-icons/gi";
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Belugalight from './Beluga-Light.gif';
 
@@ -135,7 +136,7 @@ export class Wallet extends React.Component<WalletProps, WalletState> {
                     </h4>
                 </div>
                 <div className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
-                    <h3>Miner <FaHammer  /> </h3>
+                    <h3>Miner <GiWarPick  /> </h3>
                     <h4>
                     <form>
                     <input 

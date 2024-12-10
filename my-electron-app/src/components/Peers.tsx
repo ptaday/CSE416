@@ -54,12 +54,13 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
 
       const durationMs = endTime.getTime() - connectionStartTime.getTime();
       const durationMinutes = Math.floor(durationMs / 60000);
+      const durationSeconds = Math.floor((durationMs % 60000) / 1000);
 
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
-        ...lastConnection,
-        timeEnded: endTime.toLocaleString(),
-        duration: `${durationMinutes} minutes`,
+      ...lastConnection,
+      timeEnded: endTime.toLocaleString(),
+      duration: `${durationMinutes} ${durationMinutes > 1 ? 'minutes' : 'minute'} ${durationSeconds} ${durationSeconds > 1 ? 'seconds' : 'second'}`,
         expanded: false,
       };
 
@@ -99,12 +100,13 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
 
       const durationMs = endTime.getTime() - connectionStartTime.getTime();
       const durationMinutes = Math.floor(durationMs / 60000);
+      const durationSeconds = Math.floor((durationMs % 60000) / 1000);
 
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
-        ...lastConnection,
-        timeEnded: endTime.toLocaleString(),
-        duration: `${durationMinutes} minutes`,
+      ...lastConnection,
+      timeEnded: endTime.toLocaleString(),
+      duration: `${durationMinutes} ${durationMinutes > 1 ? 'minutes' : 'minute'} ${durationSeconds} ${durationSeconds > 1 ? 'seconds' : 'second'}`,
         expanded: false,
       };
 
