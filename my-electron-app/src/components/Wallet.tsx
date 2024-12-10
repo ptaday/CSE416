@@ -1,5 +1,5 @@
 import React from 'react';
-import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight, FaRegCopy } from 'react-icons/fa';
+import { FaMoneyBillWave, FaWallet, FaChartLine, FaArrowRight, FaRegCopy,FaHammer } from 'react-icons/fa';
 import { CartesianGrid, Legend, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import Belugalight from './Beluga-Light.gif';
 
@@ -132,6 +132,20 @@ export class Wallet extends React.Component<WalletProps, WalletState> {
                     <h4>
                         {walletId.slice(0, 10)}
                         <FaRegCopy style={{ cursor: 'pointer' }} onClick={this.copyWalletId} /> 
+                    </h4>
+                </div>
+                <div className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
+                    <h3>Miner <FaHammer  /> </h3>
+                    <h4>
+                    <form>
+                    <input 
+                        type="number" 
+                        name="mineAmount" 
+                        placeholder="Amount" 
+                        required
+                        />
+                    </form>  
+                    <button type="submit">Mine</button>
                     </h4>
                 </div>
                 <div  className={`wallet-block ${isDarkTheme ? 'dark-theme' : 'light-theme'}`}>
