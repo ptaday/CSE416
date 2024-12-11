@@ -3,8 +3,23 @@
 set -e
 set -o pipefail
 
-echo "Installing dependencies for macOS..."
-brew install automake libtool boost pkg-config libevent miniupnpc
+os_type=$(uname)
+case "$os_type" in
+    "Darwin")
+        echo "=> Installing dependencies for MacOS..."
+        # Uncomment the line below to enable installation for MacOS
+        # brew install automake libtool boost pkg-config libevent miniupnpc
+        ;;
+    "Linux")
+        echo "=> Installing dependencies for Linux..."
+        sudo apt update
+        sudo apt install -y build-essential libtool autotools-dev automake pkg-config bsdmainutils curl git libboost-all-dev sqlite3 libsqlite3-dev
+        ;;
+    *)
+        echo "Unsupported OS: $os_type"
+        exit 1
+        ;;
+esac
 
 echo "Cloning modified Bitcoin Core repository..."
 git clone https://github.com/Sethu98/bitcoin.git
