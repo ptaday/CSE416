@@ -1,6 +1,5 @@
 import React from 'react';
 import { Peers } from './Peers';
-import { CloudDrive } from './CloudDrive';
 import { Explore } from './Explore';
 import { Transactions } from './Transactions';
 import { Wallet } from './Wallet';
@@ -152,8 +151,6 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
 
         if (toggleTransactions) {
             return <Transactions isDarkTheme={isDarkTheme} walletBalance={this.props.walletBalance} />;
-          } else if (toggleDrive) {
-            return <CloudDrive isDarkTheme={isDarkTheme} />;
           }else if(toggleExplore){
             return <Explore isDarkTheme={isDarkTheme} />;
           }
@@ -206,13 +203,6 @@ export class Dashboard extends React.Component<DashboardProps, DashboardState> {
                         onClick={this.toggleExplore}
                     >
                         Explore
-                    </button>
-                    <button
-                        id="cloudDrive"
-                        className={`menu-button ${this.state.toggleDrive ? 'active' : 'inactive'}`}
-                        onClick={this.toggleDrive}
-                    >
-                        Cloud Drive
                     </button>
                     <button
                         id="transactions"

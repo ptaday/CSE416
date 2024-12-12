@@ -54,12 +54,13 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
 
       const durationMs = endTime.getTime() - connectionStartTime.getTime();
       const durationMinutes = Math.floor(durationMs / 60000);
+      const durationSeconds = Math.floor((durationMs % 60000) / 1000);
 
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
-        ...lastConnection,
-        timeEnded: endTime.toLocaleString(),
-        duration: `${durationMinutes} minutes`,
+      ...lastConnection,
+      timeEnded: endTime.toLocaleString(),
+      duration: `${durationMinutes} ${durationMinutes > 1 ? 'minutes' : 'minute'} ${durationSeconds} ${durationSeconds > 1 ? 'seconds' : 'second'}`,
         expanded: false,
       };
 
@@ -85,12 +86,11 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         },
       ]);
       setSuccessPopup(true);
+      setTimeout(() => {
+        setSuccessPopup(false);
+      }, 1000);
     }
     setConfirmationPopup(null);
-  };
-
-  const handleSuccessClose = () => {
-    setSuccessPopup(false);
   };
 
   const handleDisconnect = () => {
@@ -100,12 +100,13 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
 
       const durationMs = endTime.getTime() - connectionStartTime.getTime();
       const durationMinutes = Math.floor(durationMs / 60000);
+      const durationSeconds = Math.floor((durationMs % 60000) / 1000);
 
       const updatedHistory = [...history];
       updatedHistory[updatedHistory.length - 1] = {
-        ...lastConnection,
-        timeEnded: endTime.toLocaleString(),
-        duration: `${durationMinutes} minutes`,
+      ...lastConnection,
+      timeEnded: endTime.toLocaleString(),
+      duration: `${durationMinutes} ${durationMinutes > 1 ? 'minutes' : 'minute'} ${durationSeconds} ${durationSeconds > 1 ? 'seconds' : 'second'}`,
         expanded: false,
       };
 
@@ -153,18 +154,18 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
 
         <div className="toggle-proxy">
           {becomeProxy && (
-            <p style={{ color: 'red', fontWeight: 'bold' }}>
+            <p>
               Note: You cannot connect to another proxy while being a proxy yourself.
             </p>
           )}
 
           {connectedProxy ? (
-            <button className="disconnect-button" onClick={handleDisconnect}>
+            <button className="disconnect-button ${isDarkTheme ? 'dark-button' : 'light-button'}" onClick={handleDisconnect}>
               Disconnect
             </button>
           ) : (
             <button
-              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'}`}
+              className={`toggle-button ${becomeProxy ? 'active' : 'inactive'} ${isDarkTheme ? 'dark-button' : 'light-button'} `}
               onClick={handleBecomeProxyClick} 
             >
               {becomeProxy ? 'Stop Being Proxy' : 'Become Proxy'}
@@ -181,7 +182,7 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         onChange={(e) => setSearchTerm(e.target.value)}
         disabled={becomeProxy} 
       />
-
+      <p>Click on any location to connect</p>
       <table className={`proxy-list-table ${becomeProxy ? 'disabled' : ''}`}>
         <thead>
           <tr>
@@ -238,8 +239,8 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
           <div className="modal-content">
             <h2>Confirm Connection</h2>
             <p>Do you want to connect to {confirmationPopup.location}?</p>
-            <button onClick={() => handleConfirmation(true)}>Yes</button>
-            <button onClick={() => handleConfirmation(false)}>No</button>
+            <button className={`${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => handleConfirmation(true)}>Yes</button>
+            <button className={`${isDarkTheme ? 'dark-button' : 'light-button'}`} onClick={() => handleConfirmation(false)}>No</button>
           </div>
         </div>
       )}
@@ -248,7 +249,6 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
         <div className="modal">
           <div className="modal-content">
             <h2>Connection Successful!</h2>
-            <button onClick={handleSuccessClose}>Close</button>
           </div>
         </div>
       )}
@@ -263,8 +263,8 @@ export const Peers: React.FC<PeersProps> = ({ isDarkTheme }) => {
               onChange={(e) => setPricePerMB(e.target.value)}
               placeholder="Enter price in BC"
             />
-            <button onClick={handleSetPrice}>Set Price</button>
-            <button onClick={() => setPriceModalVisible(false)}>Cancel</button>
+            <button className={`${isDarkTheme ? 'dark-button' : 'light-button'}`}  onClick={handleSetPrice}>Set Price</button>
+            <button className={`${isDarkTheme ? 'dark-button' : 'light-button'}`}   onClick={() => setPriceModalVisible(false)}>Cancel</button>
           </div>
           </div>
       )}

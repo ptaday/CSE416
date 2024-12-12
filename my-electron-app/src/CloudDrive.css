@@ -3,6 +3,12 @@
     display: inline-block;
 }
 
+.request-file-table td {
+  word-wrap: break-word;
+  word-break: break-word; /* For compatibility */
+  white-space: normal; /* Allows text wrapping */
+}
+
 .dropbtn {
     background-color: transparent;
     border: none;
