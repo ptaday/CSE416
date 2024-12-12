@@ -8,13 +8,12 @@ use rpc_client::initialize_rpc_client;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Loads variables from .env file
     dotenv().ok();
     init();
 
-    // Initialize RPC client
-    let rpc_client = initialize_rpc_client();
+    // Initialize RPC client data
+    let rpc_client_data = initialize_rpc_client();
 
-    // Starts HTTP server
-    http_server::run_http_server(rpc_client).await
+    // Start HTTP server
+    http_server::run_http_server(rpc_client_data).await
 }

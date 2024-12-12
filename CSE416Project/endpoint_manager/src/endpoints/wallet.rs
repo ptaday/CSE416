@@ -1,56 +1,16 @@
-use actix_web::{post, web, HttpResponse, Responder};
-use bitcoincore_rpc::{Client, RpcApi};
+use actix_web::{post, get, web, HttpResponse, Responder};
+use bitcoincore_rpc::RpcApi;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use log::{error, info};
 use std::sync::Arc;
-use bitcoin::network::constants::Network;
-use bitcoin::util::address::Address;
-use bitcoin::transaction::Transaction;
-use std::collections::HashMap;
-use std::sync::Mutex;
-use std::error::Error;
+// use bitcoincore_rpc::{Client, RpcApi};
 
-#[derive(Clone)]
-pub struct RpcHandler {
-    rpc_client: Client,
-}
 
-impl RpcHandler {
-    pub fn new(rpc_client: Client) -> Self {
-        RpcHandler { rpc_client }
-    }
-
-    pub fn check_block_count(&self) {
-        let block_count = self
-            .rpc_client
-            .get_block_count()
-            .expect("Failed to get block count");
-        println!("Current block count: {}", block_count);
-    }
-
-    pub fn check_balance(&self) {
-        let balance = self
-            .rpc_client
-            .get_balance(None, None)
-            .expect("Failed to get balance");
-        println!("Current balance: {}", balance);
-    }
-
-    /// Generate a single block with the given address as the coinbase recipient
-    pub fn generate_to_address(&self, address_string: &str) -> Result<String, Box<dyn Error>> {
-        let recipient_address = Address::from_str(address_string)?.assume_checked();
-        let hashes = self.rpc_client.generate_to_address(1, &recipient_address)?;
-        Ok(format!("{:?}", hashes[0]))
-    }
-
-    pub fn get_client(&self) -> &Client {
-        &self.rpc_client
-    }
-}
 
 #[derive(Deserialize)]
 pub struct RegisterRequest {
+    pub wallet_name: String,
     pub passphrase: String,
 }
 
@@ -61,14 +21,15 @@ pub struct RegisterResponse {
 
 #[post("/api/register")]
 pub async fn register_wallet(
-    rpc: web::Data<RpcHandler>,
+    rpc: web::Data<Arc<crate::rpc_client::RpcClientData>>,
     request: web::Json<RegisterRequest>,
 ) -> impl Responder {
-    let passphrase = &request.passphrase;
-    info!("Received registration request with passphrase: {}", passphrase);
+    let wallet_name = &request.wallet_name;
+    let _passphrase = &request.passphrase; // Underscore to silence unused variable warning if needed.
+    info!("Received registration request for wallet '{}'", wallet_name);
 
-    let wallet_dirs = match rpc.get_client().list_wallet_dir() {
-        Ok(dirs) => dirs,
+    let wallet_exists = match rpc.list_wallet_dir() {
+        Ok(dirs) => dirs.iter().any(|w| w == wallet_name),
         Err(e) => {
             error!("Error listing wallet directories: {:?}", e);
             return HttpResponse::InternalServerError()
@@ -76,12 +37,10 @@ pub async fn register_wallet(
         }
     };
 
-    let wallet_exists = wallet_dirs.iter().any(|w| w == passphrase);
-
     if wallet_exists {
-        info!("Wallet '{}' already exists.", passphrase);
+        info!("Wallet '{}' already exists.", wallet_name);
 
-        let loaded_wallets = match rpc.get_client().list_wallets() {
+        let loaded_wallets = match rpc.list_wallets() {
             Ok(wallets) => wallets,
             Err(e) => {
                 error!("Error listing loaded wallets: {:?}", e);
@@ -90,21 +49,30 @@ pub async fn register_wallet(
             }
         };
 
-        if !loaded_wallets.iter().any(|w| w == passphrase) {
-            match rpc.get_client().load_wallet(passphrase) {
-                Ok(_) => info!("Wallet '{}' loaded successfully.", passphrase),
+        if !loaded_wallets.iter().any(|w| w == wallet_name) {
+            match rpc.load_wallet(wallet_name) {
+                Ok(_) => info!("Wallet '{}' loaded successfully.", wallet_name),
                 Err(e) => {
-                    error!("Error loading wallet '{}': {:?}", passphrase, e);
+                    error!("Error loading wallet '{}': {:?}", wallet_name, e);
                     return HttpResponse::InternalServerError()
                         .json(json!({"error": "Failed to load wallet."}));
                 }
             }
         }
 
-        let address = match rpc.get_client().get_new_address(Some(passphrase), None) {
-            Ok(addr) => format!("{:?}", addr),
+        let wallet_client = match rpc.new_client_for_wallet(wallet_name) {
+            Ok(client) => Arc::new(client),
             Err(e) => {
-                error!("Error generating new address for wallet '{}': {:?}", passphrase, e);
+                error!("Error creating wallet-specific RPC client: {:?}", e);
+                return HttpResponse::InternalServerError()
+                    .json(json!({"error": "Failed to create wallet RPC client."}));
+            }
+        };
+
+        let address = match wallet_client.get_new_address(None, None) {
+            Ok(addr) => format!("{:?}", addr).trim_matches('"').to_string(), // Clean address format
+            Err(e) => {
+                error!("Error generating new address for wallet '{}': {:?}", wallet_name, e);
                 return HttpResponse::InternalServerError()
                     .json(json!({"error": "Failed to generate new address."}));
             }
@@ -113,19 +81,29 @@ pub async fn register_wallet(
         return HttpResponse::Ok().json(RegisterResponse { wallet_id: address });
     }
 
-    match rpc.get_client().create_wallet(passphrase, None, None, Some(passphrase.as_str()), None) {
-        Ok(_) => info!("Wallet '{}' created successfully.", passphrase),
+    // Wallet does not exist, create it
+    match rpc.create_wallet(wallet_name, None, None, Some(wallet_name.as_str()), None) {
+        Ok(_) => info!("Wallet '{}' created successfully.", wallet_name),
         Err(e) => {
-            error!("Error creating wallet '{}': {:?}", passphrase, e);
+            error!("Error creating wallet '{}': {:?}", wallet_name, e);
             return HttpResponse::InternalServerError()
                 .json(json!({"error": "Failed to create wallet."}));
         }
     }
 
-    let address = match rpc.get_client().get_new_address(Some(passphrase), None) {
-        Ok(addr) => format!("{:?}", addr),
+    let wallet_client = match rpc.new_client_for_wallet(wallet_name) {
+        Ok(client) => Arc::new(client),
         Err(e) => {
-            error!("Error generating a new address for wallet '{}': {:?}", passphrase, e);
+            error!("Error creating wallet-specific RPC client: {:?}", e);
+            return HttpResponse::InternalServerError()
+                .json(json!({"error": "Failed to create wallet RPC client."}));
+        }
+    };
+
+    let address = match wallet_client.get_new_address(None, None) {
+        Ok(addr) => format!("{:?}", addr).trim_matches('"').to_string(), // Clean address format
+        Err(e) => {
+            error!("Error generating a new address for wallet '{}': {:?}", wallet_name, e);
             return HttpResponse::InternalServerError()
                 .json(json!({"error": "Failed to generate new address."}));
         }
@@ -134,169 +112,124 @@ pub async fn register_wallet(
     HttpResponse::Ok().json(RegisterResponse { wallet_id: address })
 }
 
-#[derive(Serialize, Deserialize)]
-struct WalletResponse {
-    address: String,
-    balance: f64,
-}
 
-#[derive(Serialize, Deserialize)]
-struct TransactionRequest {
-    from_address: String,
-    to_address: String,
-    amount: f64,
-}
-
-#[derive(Serialize, Deserialize)]
-struct BlockResponse {
-    block_hash: String,
-    miner_address: String,
-}
-
-#[derive(Serialize, Deserialize, Clone)]
-struct TransactionInfo {
-    tx_id: String,
-    from_address: String,
-    to_address: String,
-    amount: f64,
-}
-
-struct AppState {
-    transactions: Mutex<HashMap<String, TransactionInfo>>,
-}
-
-#[derive(Deserialize)]
-struct MineRequest {
-    num_blocks: u32,
-    miner_address: String,
-}
-
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let rpc_client = Client::new("http://localhost:8332", "user", "password").unwrap(); // Replace with actual credentials
-    let rpc_handler = RpcHandler::new(rpc_client);
-
-    HttpServer::new(move || {
-        App::new()
-            .app_data(web::Data::new(AppState {
-                transactions: Mutex::new(HashMap::new()),
-            }))
-            .app_data(web::Data::new(rpc_handler.clone()))
-            .route("/api/wallet/balance/{address}", web::get().to(get_balance))
-            .route("/api/transaction", web::post().to(create_transaction))
-            .route("/api/transactions", web::get().to(list_transactions))
-            .route("/api/transaction/{tx_id}", web::get().to(get_transaction))
-            // .route("/api/mine", web::post().to(mine_block))
-            .route("/api/register", web::post().to(register_wallet))
-            .route("/api/block_count", web::get().to(check_block_count))  
-            .route("/api/check_balance", web::get().to(check_balance))   
-           .route("/api/generate_block", web::post().to(generate_block))   
-    })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
-}
-
-async fn check_block_count(rpc: web::Data<RpcHandler>) -> impl Responder {
-    rpc.check_block_count();
-    HttpResponse::Ok().body("Block count checked.")
-}
-
-async fn check_balance(rpc: web::Data<RpcHandler>) -> impl Responder {
-    rpc.check_balance();
-    HttpResponse::Ok().body("Balance checked.")
-}
-
-async fn generate_block(
-    rpc: web::Data<RpcHandler>,
-    address: web::Json<String>,
+#[get("/balance/{wallet_name}")]
+pub async fn get_balance(
+    rpc: web::Data<Arc<crate::rpc_client::RpcClientData>>,
+    wallet_name: web::Path<String>
 ) -> impl Responder {
-    match rpc.generate_to_address(&address.into_inner()) {
-        Ok(block_hash) => HttpResponse::Ok().json(json!({ "block_hash": block_hash })),
+    let wallet_name = wallet_name.into_inner();
+
+    let wallet_client = match rpc.new_client_for_wallet(&wallet_name) {
+        Ok(client) => client,
         Err(e) => {
-            error!("Error generating block: {:?}", e);
-            HttpResponse::InternalServerError().json(json!({ "error": "Failed to generate block." }))
+            error!("Error creating wallet-specific RPC client: {:?}", e);
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error", 
+                "message": "Failed to create wallet RPC client"
+            }));
+        }
+    };
+
+    match wallet_client.get_balance(None, None) {
+        Ok(balance) => HttpResponse::Ok().json(json!({
+            "status": "success",
+            "wallet": wallet_name,
+            "balance": balance.to_string()
+        })),
+        Err(e) => {
+            error!("Error getting balance for wallet '{}': {:?}", wallet_name, e);
+            HttpResponse::InternalServerError().json(json!({
+                "status": "error", 
+                "message": format!("Error getting balance for wallet {}: {:?}", wallet_name, e)
+            }))
         }
     }
 }
 
-async fn get_balance(address: web::Path<String>) -> impl Responder {
-    let balance = 0.5;  // Example balance in BTC
-    HttpResponse::Ok().json(WalletResponse {
-        address: address.into_inner(),
-        balance,
-    })
+use bitcoin::{Address, Network};
+use bitcoin::address::NetworkUnchecked;
+
+use bitcoincore_rpc::{
+    bitcoin::amount::Amount, 
+    json::EstimateMode
+};
+
+#[derive(Deserialize)]
+pub struct SendToAddressRequest {
+    pub address: String,
+    pub amount: f64,
+    pub comment: Option<String>,
 }
 
-async fn create_transaction(
-    tx_request: web::Json<TransactionRequest>,
-    data: web::Data<AppState>,
+#[post("/api/send")]
+pub async fn send_to_address(
+    rpc: web::Data<Arc<crate::rpc_client::RpcClientData>>,
+    request: web::Json<SendToAddressRequest>
 ) -> impl Responder {
-    let tx_in = bitcoin::blockdata::transaction::TxIn {
-        previous_output: Default::default(),
-        script_sig: Default::default(),
-        sequence: Default::default(),
-        witness: Default::default(),
+    // Validate address
+    let address = match request.address.parse::<Address<NetworkUnchecked>>() {
+        Ok(addr) => match addr.require_network(Network::Maintest) {
+            Ok(checked_addr) => checked_addr,
+            Err(_) => {
+                return HttpResponse::BadRequest().json(json!({
+                    "status": "error", 
+                    "message": "Invalid network for address"
+                }));
+            }
+        },
+        Err(_) => {
+            return HttpResponse::BadRequest().json(json!({
+                "status": "error", 
+                "message": "Invalid Bitcoin address"
+            }));
+        }
     };
 
-    let tx_out = bitcoin::blockdata::transaction::TxOut {
-        value: (tx_request.amount * 100_000_000.0) as u64,
-        script_pubkey: Address::from_str(&tx_request.to_address).unwrap().script_pubkey(),
+    // Validate amount
+    let amount = match Amount::from_btc(request.amount) {
+        Ok(amt) => amt,
+        Err(_) => {
+            return HttpResponse::BadRequest().json(json!({
+                "status": "error", 
+                "message": "Invalid amount"
+            }));
+        }
     };
 
-    let tx = Transaction {
-        version: 1,
-        lock_time: 0,
-        input: vec![tx_in],
-        output: vec![tx_out],
+    // Create wallet client
+    let wallet_client = match rpc.new_client_for_wallet("default") {
+        Ok(client) => client,
+        Err(e) => {
+            error!("RPC client error: {:?}", e);
+            return HttpResponse::InternalServerError().json(json!({
+                "status": "error", 
+                "message": "Failed to create wallet client"
+            }));
+        }
     };
 
-    let tx_id = "fake_tx_id_123".to_string();
-
-    let transaction_info = TransactionInfo {
-        tx_id: tx_id.clone(),
-        from_address: tx_request.from_address.clone(),
-        to_address: tx_request.to_address.clone(),
-        amount: tx_request.amount,
-    };
-
-    let mut transactions = data.transactions.lock().unwrap();
-    transactions.insert(tx_id.clone(), transaction_info);
-
-    HttpResponse::Ok().body(format!("Transaction broadcasted successfully with ID: {}", tx_id))
-}
-
-async fn list_transactions(data: web::Data<AppState>) -> impl Responder {
-    let transactions = data.transactions.lock().unwrap();
-    let transaction_list: Vec<TransactionInfo> = transactions.values().cloned().collect();
-    HttpResponse::Ok().json(transaction_list)
-}
-
-async fn get_transaction(
-    tx_id: web::Path<String>,
-    data: web::Data<AppState>,
-) -> impl Responder {
-    let transactions = data.transactions.lock().unwrap();
-    match transactions.get(&tx_id.into_inner()) {
-        Some(transaction) => HttpResponse::Ok().json(transaction),
-        None => HttpResponse::NotFound().body("Transaction not found"),
+    // Send transaction
+    match wallet_client.send_to_address(
+        &address,  
+        amount,    
+        request.comment.as_deref(),  
+        None,      
+        None,      
+        None,      
+        None,      
+        Some(EstimateMode::Unset)  
+    ) {
+        Ok(txid) => HttpResponse::Ok().json(json!({
+            "status": "success",
+            "transaction_id": txid.to_string()
+        })),
+        Err(e) => {
+            error!("Send transaction error: {:?}", e);
+            HttpResponse::InternalServerError().json(json!({
+                "status": "error", 
+                "message": format!("Transaction failed: {:?}", e)
+            }))
+        }
     }
 }
-
-// async fn mine_block(req: web::Json<MineRequest>) -> impl Responder {
-//     let num_blocks = req.num_blocks;
-//     let miner_add = req.miner_address.clone();
-
-//     let mut block_hashes = Vec::new();
-//     let miner_address = miner_add;  // Placeholder miner address
-
-//     for i in 0..num_blocks {
-//         let block_hash = format!("0000000000000000000d77f6842c8ec8696b042e08d2f0c8ecfce0592cf8a674_{}", i);
-//         block_hashes.push(block_hash);
-//     }
-
-//     HttpResponse::Ok().json(BlockResponse {
-//         block_hash: block_hashes.join(", "),
-//         miner_address: miner_address.to_string(),
-//     })
-// }
